@@ -9,10 +9,10 @@ https://igl.ethz.ch/projects/ARAP/
 #### Prerequisites
 
 - Install CMake GUI: `sudo apt-get install cmake-gui`
-- Create a library directory: `mkdir lib`
-- Switch to this directory: `cd lib`
+- Create a library directory: `mkdir libs`
+- Switch to this directory: `cd libs`
 
-Complete the following steps in `lib` directory! Note that normally you would not have to run `make` in the **header-only** libraries, just `make install` would suffice. However, out of completeness, we included both commands in the guidelines below.
+Complete the following steps in `libs` directory! Note that normally you would not have to run `make` in the **header-only** libraries, just `make install` would suffice. However, out of completeness, we included both commands in the guidelines below.
 
 #### 1) Eigen
 

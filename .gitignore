@@ -1,32 +1,58 @@
-# Prerequisites
-*.d
+# ------------------------------------------------------
+# User-defined !!!
+# ------------------------------------------------------
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# User-defined ignores are placed at the bottom to make sure they override all
 
-# Precompiled Headers
-*.gch
-*.pch
+# ------------------------------------------------------
+# macOS
+# ------------------------------------------------------
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+.DS_Store
 
-# Fortran module files
-*.mod
-*.smod
+# ------------------------------------------------------
+# CMake
+# ------------------------------------------------------
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
 
-# Executables
-*.exe
-*.out
-*.app
+# ------------------------------------------------------
+# Visual Studio Code
+# ------------------------------------------------------
+
+**/.vscode/
+
+# Local History
+.history/
+
+# ------------------------------------------------------
+# JetBrains IDEs
+# ------------------------------------------------------
+
+# User-specific stuff
+**/.idea/
+
+# ------------------------------------------------------
+# User-defined
+# ------------------------------------------------------
+
+# Library folder
+libs/
+
+# Build folders
+**build*/
+
+# Never ignore data and output directories
+!**data/
+!**out/
+

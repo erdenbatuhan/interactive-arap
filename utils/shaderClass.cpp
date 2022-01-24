@@ -1,8 +1,9 @@
 #include"shaderClass.h"
 #include <filesystem>
-#include "../../Libs/glm_lib/include/glm/gtc/matrix_transform.hpp"
-#include "../../Libs/glm_lib/include/glm/gtc/type_ptr.hpp"
-namespace fs = std::experimental::filesystem;
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+
+namespace fs = std::filesystem;
 
 Shader::Shader(const char* vertexPath,const char* fragmentPath) {
 

@@ -58,7 +58,7 @@ if(WIN32)
 
     add_custom_command(TARGET interactive_arap POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${glfw3_DIR}/../../../bin/glfw3.dll" "${CMAKE_BINARY_DIR}"
-            VERBATIM)
+        "${glfw3_DIR}/../../../bin/glfw3.dll" "${CMAKE_BINARY_DIR}"
+        VERBATIM)
 endif(WIN32)
 

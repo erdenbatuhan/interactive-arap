@@ -56,7 +56,7 @@ target_include_directories(interactive_arap PUBLIC ${EIGEN3_INCLUDE_DIR} ${GLM_I
 
 # On Windows, copy DDLs to executable folder
 if(WIN32)
-    target_compile_definitions(main PUBLIC NOMINMAX _USE_MATH_DEFINES)
-    set_property(TARGET interactive-arap PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/)
+    target_compile_definitions(interactive_arap PUBLIC NOMINMAX _USE_MATH_DEFINES)
+    set_property(TARGET interactive_arap PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/)
 endif(WIN32)
 

@@ -24,11 +24,11 @@ get_target_property(GLOG_DLL_PATH_DEBUG glog::glog IMPORTED_LOCATION_DEBUG)
 get_target_property(GLOG_DLL_PATH_RELEASE glog::glog IMPORTED_LOCATION_RELEASE)
 
 # TODO: Replace utils with src and remove this TODO comment
-file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/utils/*.h) # Set header files
-file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/utils/*.c*) # Set source files
+file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/**/*.h) # Set header files
+file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/**/*.c*) # Set source files
 
 # Add executable and link it to the libraries
-add_executable(interactive_arap main.cpp ${SOURCE_FILES} ${HEADER_FILES})
+add_executable(interactive_arap Main.cpp ${SOURCE_FILES} ${HEADER_FILES} src/SimpleArap.cpp src/SimpleArap.h)
 target_link_libraries(interactive_arap ceres glfw Eigen3::Eigen glm::glm)
 
 # Add additional definitions

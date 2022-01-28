@@ -2,11 +2,11 @@
 #define INTERACTIVE_ARAP_ARAP_H
 
 #include <iostream>
-#include "../utils/glad.h"
-#include "GLFW/glfw3.h"
-#include "../utils/Eigen.h"
-#include <ceres/ceres.h>
 #include <math.h>
+#include "../utils/Eigen.h"
+#include "../utils/glad.h"
+#include <ceres/ceres.h>
+#include "GLFW/glfw3.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 

@@ -1,14 +1,15 @@
 #ifndef SHADER_CLASS_H
 #define SHADER_CLASS_H
 
-#include "../utils/glad.h"
-#include<string>
-#include<fstream>
-#include<sstream>
-#include<iostream>
-#include<cerrno>
+#include <cerrno>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <sstream>
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "../utils/glad.h"
+
 
 std::string get_file_contents(const char* filename);
 

@@ -1,17 +1,17 @@
 #include <iostream>
-#include "utils/glad.h"
-#include "GLFW/glfw3.h"
-#include "ceres/ceres.h"
+#include <unistd.h>
 #include <math.h>
+#include "utils/glad.h"
+#include "utils/stb.h"
+#include "ceres/ceres.h"
+#include "GLFW/glfw3.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include "src/ShaderClass.h"
-#include "utils/stb.h"
 #include "src/Arap.h"
-#include<unistd.h>
+#include "src/ShaderClass.h"
 
 
-struct vertexData {
+struct VertexData {
 	glm::vec3 currentVertex;
 	std::vector<int> neighbor;
 };
@@ -22,7 +22,7 @@ struct Helper3D {
 	std::vector<int> anchorPoints;
 
 	//contains all the vertices, their neighbours and their colors
-	std::vector<vertexData> modelDet;
+	std::vector<VertexData> modelDet;
 	
 };
 Helper3D bunnyModel;
@@ -292,7 +292,7 @@ void readFile3D(std::string fileName) {
         int currTemp = (6 * i);
 
         glm::vec3 currentVec = glm::vec3(bunnyModel.vertices[currTemp], bunnyModel.vertices[currTemp + 1], bunnyModel.vertices[currTemp + 2]);
-        vertexData temp3;
+        VertexData temp3;
 
         temp3.currentVertex = currentVec;
         bunnyModel.modelDet.push_back(temp3);

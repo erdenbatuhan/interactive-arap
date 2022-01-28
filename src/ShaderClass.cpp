@@ -1,7 +1,8 @@
-#include"ShaderClass.h"
+#include "ShaderClass.h"
 #include <filesystem>
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+
 
 namespace fs = std::filesystem;
 

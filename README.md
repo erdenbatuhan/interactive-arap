@@ -8,6 +8,7 @@ https://igl.ethz.ch/projects/ARAP/
 
 #### Prerequisites
 
+- Make sure you have OpenGL installed on your system!
 - Install CMake GUI: `sudo apt-get install cmake-gui`
 - Create a library directory: `mkdir libs`
 - Switch to this directory: `cd libs`

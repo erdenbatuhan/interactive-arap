@@ -4,6 +4,9 @@ project(interactive_arap)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Make sure OpenGL is installed!
+find_package(OpenGL REQUIRED)
+
 # Set the directory of each library
 set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs CACHE PATH "Path to the library folder containing additional libraries")
 set(Eigen3_DIR ${LIBRARY_DIR}/eigen/share/eigen3/cmake CACHE PATH "Path to Eigen")
@@ -24,8 +27,8 @@ get_target_property(GLOG_DLL_PATH_DEBUG glog::glog IMPORTED_LOCATION_DEBUG)
 get_target_property(GLOG_DLL_PATH_RELEASE glog::glog IMPORTED_LOCATION_RELEASE)
 
 # TODO: Replace utils with src and remove this TODO comment
-file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/**/*.h) # Set header files
-file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/**/*.c*) # Set source files
+file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/utils/*.h) # Set header files
+file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/utils/*.c*) # Set source files
 
 # Add executable and link it to the libraries
 add_executable(interactive_arap main.cpp ${SOURCE_FILES} ${HEADER_FILES})
@@ -51,31 +54,5 @@ elseif (UNIX) # Unix-based Operating Systems (referenced from https://cse.engine
     else() # Linux
         message("-- Operating system: Linux")
     endif(APPLE)
-
-    # Find OpenGL and GLUT
-    find_package(OpenGL REQUIRED)
-    find_package(GLUT REQUIRED)
-
-    # CMake built-in variables defined when the packages are found
-    set(UNIX_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR} ${GLUT_INCLUDE_DIR})
-    set(UNIX_LIBRARIES ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
-
-    if (APPLE) # macOS
-        # Suppress warnings of the deprecation of glut functions on macOS.
-        add_definitions(-Wno-deprecated-declarations)
-    else() # Linux
-        # Find GLEW
-        find_package(GLEW REQUIRED)
-
-        # Add glew include directory and library path to lists
-        list(APPEND UNIX_INCLUDE_DIRS ${GLEW_INCLUDE_DIRS})
-        list(APPEND UNIX_LIBRARIES ${GLEW_LIBRARIES})
-    endif(APPLE)
-
-    # Add the list of include paths to be used to search for include files
-    include_directories(interactive_arap ${UNIX_INCLUDE_DIRS})
-
-    # Link the executable to the libraries
-    target_link_libraries(interactive_arap ${UNIX_LIBRARIES})
 endif(WIN32)
 

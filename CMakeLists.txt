@@ -51,7 +51,7 @@ add_custom_command(TARGET interactive_arap
 add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
 
 # OS-specific configurations
-if (WIN32) # Windows
+if(WIN32) # Windows
     message("-- Operating system: Windows")
 
     target_compile_definitions(interactive_arap PUBLIC NOMINMAX _USE_MATH_DEFINES)
@@ -65,8 +65,8 @@ if (WIN32) # Windows
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${GLEW_ROOT}/bin/Release/x64/glew32.dll" "${CMAKE_BINARY_DIR}"
         VERBATIM)
-elseif (UNIX) # Unix-based Operating Systems (referenced from https://cse.engineering.nyu.edu/cs653/OpenGLCompilationMacLinux8.pdf)
-    if (APPLE) # macOS
+elseif(UNIX) # Unix-based Operating Systems (referenced from https://cse.engineering.nyu.edu/cs653/OpenGLCompilationMacLinux8.pdf)
+    if(APPLE) # macOS
         message("-- Operating system: macOS")
     else() # Linux
         message("-- Operating system: Linux")

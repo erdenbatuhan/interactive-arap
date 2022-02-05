@@ -1,6 +1,5 @@
 #include <math.h>
 #include <iostream>
-#include <filesystem>
 
 #include <gl/glew.h>
 #include <GLFW/glfw3.h>
@@ -418,11 +417,6 @@ void printVec4(glm::vec4 arr1) {
 }
 
 int main() {
-    std::cout << "Current path is " << std::filesystem::current_path() << '\n';
-
-    std::filesystem::current_path("../");
-    std::cout << "Now, current path is " << std::filesystem::current_path() << '\n';
-
     std::cout << "################################################" << std::endl;
     std::cout << "######### Welcome to Interactive Arap ##########" << std::endl;
     std::cout << "################################################" << std::endl;

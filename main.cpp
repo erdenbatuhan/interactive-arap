@@ -417,12 +417,6 @@ void printVec4(glm::vec4 arr1) {
 }
 
 int main() {
-    char cur[100];
-    std::cout << "Current path is " << getcwd(cur, 100) << '\n';
-
-    chdir("../");
-    std::cout << "Now, current path is " << getcwd(cur, 100) << '\n';
-
     std::cout << "################################################" << std::endl;
     std::cout << "######### Welcome to Interactive Arap ##########" << std::endl;
     std::cout << "################################################" << std::endl;

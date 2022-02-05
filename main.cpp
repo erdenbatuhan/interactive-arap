@@ -1,15 +1,15 @@
-#include <iostream>
-#include "utils/glad.h"
-#include "GLFW/glfw3.h"
-#include "utils/Eigen.h"
-#include "ceres/ceres.h"
 #include <math.h>
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "utils/shaderClass.h"
-#include "utils/stb.h"
-#include "build/myarap.h"
+#include <iostream>
 
+#include <gl/glew.h>
+#include <GLFW/glfw3.h>
+#include <ceres/ceres.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "include/Eigen.h"
+#include "include/shaderClass.h"
+#include "include/myarap.h"
 
 
 struct vertData {
@@ -137,41 +137,54 @@ int main()
 //#######################################################
 	// glfw: initialize and configure
 	// ------------------------------
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+	if (!glfwInit())
+	{
+		std::cerr << "Could not init glfw!" << std::endl;
+		exit(-1);
+	}
+	else
+	{
+		// Set all the required options for GLFW
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
+	}
 
 	// glfw window creation
 	// --------------------
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Interactive ARAP", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return -1;
 	}
-	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetMouseButtonCallback(window,mouse_button_callback);
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	else
 	{
-		std::cout << "Failed to initialize GLAD" << std::endl;
-		return -1;
+		glfwMakeContextCurrent(window);
+		glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+		glfwSetMouseButtonCallback(window,mouse_button_callback);
 	}
+
+	// Initialize OpenGL
+	glewExperimental = GL_TRUE;
+	if (GLEW_OK != glewInit())
+	{
+		std::cout << "Failed to initialize GLEW" << std::endl;
+		exit(-1);
+	}
+
 //#######################################################	
 //#######################################################
 
 
 	
 	//reading the file
-	Shader ourShader("shader_filez/model.vert", "shader_filez/model.frag");
-	readFile3D("extra_res/model/bunny.off");
+	Shader ourShader("shaders/model.vert", "shaders/model.frag");
+	readFile3D("resources/model/bunny.off");
 	int n_vert = bunny_model.verti.size();
 	int n_indi = bunny_model.indi.size();
 

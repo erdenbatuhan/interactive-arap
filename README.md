@@ -85,7 +85,11 @@ Complete the following steps in `libs` directory! Note that normally you would n
 - Then make the glfw project by running the following commands in `<path_to_project>/libs/glfw/cmake-build`: `make && make install`
 - `<path_to_project>/libs/glfw/` folder should contain `lib`. If not, use the same tips in Eigen guide.
 
-#### 5) OpenGL Mathematics (GLM)
+#### 5) GLEW (Windows only)
+- Download latest version (2.2.0)
+- Set **GLEW_ROOT** in cmake to the root directory of the binaries
+
+#### 6) OpenGL Mathematics (GLM)
 
 - Clone GLM: `git clone git@github.com:g-truc/glm.git glm`
 - Switch to GLM directory: `cd glm`

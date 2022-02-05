@@ -12,6 +12,11 @@ set(Ceres_DIR ${LIBRARY_DIR}/ceres/cmake CACHE PATH "Path to Ceres")
 set(glfw3_DIR ${LIBRARY_DIR}/glfw/lib/cmake/glfw3 CACHE PATH "Path to glfw")
 set(glm_DIR ${LIBRARY_DIR}/glm/cmake/glm CACHE PATH "Path to glm")
 
+# Windows specific
+if(WIN32)
+    set(GLEW_ROOT ${LIBRARY_DIR}/glew CACHE PATH "Path to glew")
+endif()
+
 # Find the required packages
 find_package(Eigen3 REQUIRED)
 find_package(glog REQUIRED)

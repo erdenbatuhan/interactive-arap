@@ -50,8 +50,13 @@ add_custom_command(TARGET interactive_arap
 if (WIN32) # Windows
     message("-- Operating system: Windows")
 
-# On Windows, copy DLLs to executable folder
-if(WIN32)
+# Add additional definitions
+add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
+
+# OS-specific configurations
+if (WIN32) # Windows
+    message("-- Operating system: Windows")
+
     target_compile_definitions(interactive_arap PUBLIC NOMINMAX _USE_MATH_DEFINES)
     set_property(TARGET interactive_arap PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/)
 
@@ -73,6 +78,7 @@ elseif (UNIX) # Unix-based Operating Systems (referenced from https://cse.engine
     # Find & add GLUT - may not be necessary!
     find_package(GLUT REQUIRED)
     target_link_libraries(interactive_arap GLUT::GLUT)
+
 
     if (APPLE) # macOS
         # Suppress warnings of the deprecation of glut functions on macOS.

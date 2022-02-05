@@ -26,6 +26,7 @@ find_package(OpenGL REQUIRED)
 get_target_property(GLOG_DLL_PATH_DEBUG glog::glog IMPORTED_LOCATION_DEBUG)
 get_target_property(GLOG_DLL_PATH_RELEASE glog::glog IMPORTED_LOCATION_RELEASE)
 
+# Set header and source files
 file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h) # Set header files
 file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c*) # Set source files
 
@@ -45,10 +46,6 @@ add_custom_command(TARGET interactive_arap
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/resources" "${CMAKE_BINARY_DIR}/resources"
         VERBATIM)
-
-# OS-specific configurations
-if (WIN32) # Windows
-    message("-- Operating system: Windows")
 
 # Add additional definitions
 add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
@@ -74,21 +71,5 @@ elseif (UNIX) # Unix-based Operating Systems (referenced from https://cse.engine
     else() # Linux
         message("-- Operating system: Linux")
     endif(APPLE)
-
-    # Find & add GLUT - may not be necessary!
-    find_package(GLUT REQUIRED)
-    target_link_libraries(interactive_arap GLUT::GLUT)
-
-
-    if (APPLE) # macOS
-        # Suppress warnings of the deprecation of glut functions on macOS.
-        add_definitions(-Wno-deprecated-declarations)
-    endif(APPLE)
-
-    # Add the list of include paths to be used to search for include files
-    include_directories(interactive_arap ${UNIX_INCLUDE_DIRS})
-
-    # Link the executable to the libraries
-    target_link_libraries(interactive_arap ${UNIX_LIBRARIES})
 endif(WIN32)
 

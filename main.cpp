@@ -12,7 +12,7 @@
 #include "include/Arap.h"
 
 struct VertexData {
-	glm::vec3 currentVertex;
+	glm::vec3 currentVertex{};
 	std::vector<int> neighbor;
 };
 

@@ -40,7 +40,7 @@ add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
 # Copy resources & shaders
 add_custom_command(TARGET interactive_arap
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders" "${CMAKE_BINARY_DIR}/shaders"
+        "resources/shaders" "${CMAKE_BINARY_DIR}/shaders"
         VERBATIM)
 add_custom_command(TARGET interactive_arap
         COMMAND ${CMAKE_COMMAND} -E copy_directory

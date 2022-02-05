@@ -37,11 +37,7 @@ target_link_libraries(interactive_arap ceres glfw Eigen3::Eigen glm::glm GLEW::g
 # Add additional definitions
 add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
 
-# Copy resources & shaders
-add_custom_command(TARGET interactive_arap
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "resources/shaders" "${CMAKE_BINARY_DIR}/shaders"
-        VERBATIM)
+# Copy resources (models & shaders)
 add_custom_command(TARGET interactive_arap
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/resources" "${CMAKE_BINARY_DIR}/resources"

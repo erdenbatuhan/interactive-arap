@@ -184,7 +184,7 @@ int main()
 	
 	//reading the file
 	Shader ourShader("resources/shaders/model.vert", "resources/shaders/model.frag");
-	readFile3D("resources/model/bunny.off");
+	readFile3D("resources/models/bunny.off");
 	int n_vert = bunny_model.verti.size();
 	int n_indi = bunny_model.indi.size();
 

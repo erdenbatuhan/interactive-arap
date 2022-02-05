@@ -82,7 +82,23 @@ Complete the following steps in `libs` directory! Note that normally you would n
 - Then make the glfw project by running the following commands in `<path_to_project>/libs/glfw/cmake-build`: `make && make install`
 - `<path_to_project>/libs/glfw/` folder should contain `lib`. If not, use the same tips in Eigen guide.
 
-#### 5) OpenGL Mathematics (GLM)
+#### 5) glew
+
+- Clone glew: `git clone git@github.com:edoren/glew.git glew`
+- Switch to glew directory: `cd glew`
+- Checkout to stable version: `git checkout v2.0.0`
+- Create build directory: `mkdir build/cmake/cmake-build`
+- Switch to this directory: `cd build/cmake/cmake-build`
+- Set eigen install directory in cmake:
+  - `cmake-gui`
+  - Set source directory to `<path_to_project>/libs/glew/build/cmake` and build directory to `<path_to_project>/libs/glew/build/cmake/cmake-build`.
+  - Click "Configure".
+  - Set **CMAKE_INSTALL_PREFIX** to `<path_to_project>/libs/glew` (If you do not see this entry, check the **Advanced** checkbox at the top right.).
+  - Click "Generate".
+- Then make the glew project by running the following commands in `<path_to_project>/libs/glew/build/cmake/cmake-build`: `make && make install`
+- `<path_to_project>/libs/glew/` folder should contain `lib`. If not, use the same tips in Eigen guide.
+
+#### 6) OpenGL Mathematics (GLM)
 
 - Clone GLM: `git clone git@github.com:g-truc/glm.git glm`
 - Switch to GLM directory: `cd glm`

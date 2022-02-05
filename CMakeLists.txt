@@ -4,21 +4,20 @@ project(interactive_arap)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# Set the directory of each library
+# Set the directory of each library installed locally in the project
 set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs CACHE PATH "Path to the library folder containing additional libraries")
 set(Eigen3_DIR ${LIBRARY_DIR}/eigen/share/eigen3/cmake CACHE PATH "Path to Eigen")
 set(glog_DIR ${LIBRARY_DIR}/glog/lib/cmake/glog CACHE PATH "Path to glog")
 set(Ceres_DIR ${LIBRARY_DIR}/ceres/cmake CACHE PATH "Path to Ceres")
 set(glfw3_DIR ${LIBRARY_DIR}/glfw/lib/cmake/glfw3 CACHE PATH "Path to glfw")
-set(GLEW_ROOT ${LIBRARY_DIR}/glew CACHE PATH "Path to GLEW")
-set(glm_DIR ${LIBRARY_DIR}/glm CACHE PATH "Path to glm")
+set(glm_DIR ${LIBRARY_DIR}/glm/cmake/glm CACHE PATH "Path to glm")
 
 # Find the required packages
 find_package(Eigen3 REQUIRED)
 find_package(glog REQUIRED)
 find_package(Ceres REQUIRED)
-find_package(GLEW REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(GLEW REQUIRED)
 find_package(glm REQUIRED)
 find_package(OpenGL REQUIRED)
 
@@ -32,7 +31,7 @@ file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c*) # Set source files
 
 # Add executable and link it to the libraries
 add_executable(interactive_arap main.cpp ${SOURCE_FILES} ${HEADER_FILES})
-target_link_libraries(interactive_arap ceres glfw Eigen3::Eigen glm::glm GLEW::glew OpenGL::GL)
+target_link_libraries(interactive_arap Eigen3::Eigen ceres glfw GLEW::glew glm::glm OpenGL::GL)
 
 # Add additional definitions
 add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")

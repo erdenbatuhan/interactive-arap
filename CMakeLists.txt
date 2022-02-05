@@ -4,10 +4,7 @@ project(interactive_arap)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# Make sure OpenGL is installed!
-find_package(OpenGL REQUIRED)
-
-# Set the directory of each library
+# Set the directory of each library installed locally in the project
 set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs CACHE PATH "Path to the library folder containing additional libraries")
 set(Eigen3_DIR ${LIBRARY_DIR}/eigen/share/eigen3/cmake CACHE PATH "Path to Eigen")
 set(glog_DIR ${LIBRARY_DIR}/glog/lib/cmake/glog CACHE PATH "Path to glog")
@@ -20,19 +17,30 @@ find_package(Eigen3 REQUIRED)
 find_package(glog REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(GLEW REQUIRED)
 find_package(glm REQUIRED)
+find_package(OpenGL REQUIRED)
 
 # Additional GLOG options
 get_target_property(GLOG_DLL_PATH_DEBUG glog::glog IMPORTED_LOCATION_DEBUG)
 get_target_property(GLOG_DLL_PATH_RELEASE glog::glog IMPORTED_LOCATION_RELEASE)
 
 # Set header and source files
-file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/**/*.h) # Set header files
-file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/**/*.c*) # Set source files
+file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h) # Set header files
+file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c*) # Set source files
 
 # Add executable and link it to the libraries
 add_executable(interactive_arap main.cpp ${SOURCE_FILES} ${HEADER_FILES})
-target_link_libraries(interactive_arap ceres glfw Eigen3::Eigen glm::glm)
+target_link_libraries(interactive_arap Eigen3::Eigen ceres glfw GLEW::glew glm::glm OpenGL::GL)
+
+# Add additional definitions
+add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
+
+# Copy resources (models & shaders)
+add_custom_command(TARGET interactive_arap
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/resources" "${CMAKE_BINARY_DIR}/resources"
+        VERBATIM)
 
 # Add additional definitions
 add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
@@ -47,6 +55,10 @@ if (WIN32) # Windows
     add_custom_command(TARGET interactive_arap POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${glfw3_DIR}/../../../bin/glfw3.dll" "${CMAKE_BINARY_DIR}"
+        VERBATIM)
+    add_custom_command(TARGET interactive_arap POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${GLEW_ROOT}/bin/Release/x64/glew32.dll" "${CMAKE_BINARY_DIR}"
         VERBATIM)
 elseif (UNIX) # Unix-based Operating Systems (referenced from https://cse.engineering.nyu.edu/cs653/OpenGLCompilationMacLinux8.pdf)
     if (APPLE) # macOS

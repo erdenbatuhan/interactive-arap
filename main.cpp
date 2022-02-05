@@ -1,15 +1,15 @@
-#include <iostream>
-#include <unistd.h>
 #include <math.h>
-#include "utils/glad.h"
-#include "utils/stb.h"
-#include "ceres/ceres.h"
-#include "GLFW/glfw3.h"
-#include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "src/Arap.h"
-#include "src/ShaderClass.h"
+#include <iostream>
 
+#include <gl/glew.h>
+#include <GLFW/glfw3.h>
+#include <ceres/ceres.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "include/Eigen.h"
+#include "include/Shader.h"
+#include "include/Arap.h"
 
 struct VertexData {
 	glm::vec3 currentVertex;
@@ -27,7 +27,7 @@ struct Helper3D {
 };
 Helper3D bunnyModel;
 
-//TODO: Delete these after separating gui and main classes
+// TODO: Delete these after separating gui and main classes
 void readFile3D(std::string fileName);
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
@@ -371,7 +371,7 @@ std::vector<int> findConnections(glm::vec3 currentCoord, int currentInd, int max
 void changeColor(glm::vec3 currentCoord) {
 	int minInd = 0;
 	float minDist = 100;
-	
+
 	for (int i = 0; i < bunnyModel.modelDet.size();i++) {
 		if (glm::distance(currentCoord,bunnyModel.modelDet[i].currentVertex) < minDist) {
 			minInd = i;
@@ -385,7 +385,7 @@ void changeColor(glm::vec3 currentCoord) {
 		bunnyModel.vertices[currTemp + 3] = 1.0;
 		bunnyModel.vertices[currTemp + 4] = 0.0;
 		bunnyModel.vertices[currTemp + 5] = 1.0;
-		
+
 	}
 }
 
@@ -442,35 +442,43 @@ int main() {
     }
 
     // glfw: initialize and configure
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+    if (!glfwInit()) {
+        std::cerr << "Could not init glfw!" << std::endl;
+        exit(-1);
+    } else {
+        // Set all the required options for GLFW
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
+    }
 
     // glfw window creation
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL) {
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Interactive ARAP", NULL, NULL);
+
+    if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
+
         return -1;
+    } else {
+        glfwMakeContextCurrent(window);
+        glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+        glfwSetMouseButtonCallback(window, mouseButtonCallback);
     }
 
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-    glfwSetMouseButtonCallback(window,mouseButtonCallback);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
+    // Initialize OpenGL
+    glewExperimental = GL_TRUE;
+    if (GLEW_OK != glewInit()) {
+        std::cout << "Failed to initialize GLEW" << std::endl;
+        exit(-1);
     }
 
-    //reading the file
-    Shader ourShader("resources/shader/model.vert", "resources/shader/model.frag");
-    readFile3D("data/bunny.off");
+    // reading from file
+    Shader ourShader("resources/shaders/model.vert", "resources/shaders/model.frag");
+    readFile3D("resources/models/bunny.off");
 
     int n_vert = bunnyModel.vertices.size();
     int n_indices = bunnyModel.indices.size();

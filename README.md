@@ -6,10 +6,12 @@ https://igl.ethz.ch/projects/ARAP/
 
 ### Local Environment Setup
 
+#### Dependencies
+
+Make sure you have **OpenGL**, **GLEW** and **CMake GUI** installed on your system!
+
 #### Prerequisites
 
-- Make sure you have OpenGL installed on your system!
-- Install CMake GUI: `sudo apt-get install cmake-gui`
 - Create a library directory: `mkdir libs`
 - Switch to this directory: `cd libs`
 

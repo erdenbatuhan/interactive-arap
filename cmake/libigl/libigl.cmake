@@ -1,6 +1,6 @@
 # License: ./LICENSE
 # Licensed under: Mozilla Public License 2.0
-# Referenced from: https://github.com/libigl/libigl-example-project/blob/8bffa8b1722f937734d06f8762f813cc4022abcd/LICENSE
+# Referenced from: https://github.com/libigl/libigl-example-project/blob/8bffa8b1722f937734d06f8762f813cc4022abcd/cmake/libigl.cmake
 
 
 if(TARGET igl::core)

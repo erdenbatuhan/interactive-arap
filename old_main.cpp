@@ -472,7 +472,7 @@ int main() {
 
     // reading from file
     Shader ourShader("resources/shaders/model.vert", "resources/shaders/model.frag");
-    readFile3D("resources/models/bunny.off");
+    readFile3D("resources/models/armadillo_1k.off");
 
     int n_vert = bunnyModel.vertices.size();
     int n_indices = bunnyModel.indices.size();

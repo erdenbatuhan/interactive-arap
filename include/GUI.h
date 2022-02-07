@@ -32,7 +32,7 @@ private:
     Eigen::Vector2f getMousePosition();
 
     // Converts the camera position of the vertex to a world position
-    Eigen::Vector3f convertCameraToWorldPosition(int vertexId);
+    Eigen::Vector3f convertCameraToWorldPosition(int);
 
     // Handles mouse click event
     void handleMouseClick();

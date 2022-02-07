@@ -1,6 +1,7 @@
 /**
- * Reference repositories:
- *  - https://github.com/libigl/libigl/blob/main/tutorial/708_Picking/main.cpp
+ * Project: Interactive ARAP
+ * File:    GUI.h
+ * Authors: Batuhan Erden, Cansu Yildirim, Anas Shahzad, Alexander Epple
  */
 
 #ifndef _GUI_H_

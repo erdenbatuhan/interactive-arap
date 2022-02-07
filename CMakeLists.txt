@@ -1,3 +1,9 @@
+# ===============================================================================
+# Project: Interactive ARAP
+# File:    CMakeLists.txt
+# Authors: Batuhan Erden, Cansu Yildirim, Anas Shahzad, Alexander Epple
+# ===============================================================================
+
 cmake_minimum_required(VERSION 3.13)
 
 project(interactive_arap)

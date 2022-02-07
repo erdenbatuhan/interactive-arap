@@ -1,3 +1,9 @@
+/**
+ * Project: Interactive ARAP
+ * File:    main.cpp
+ * Authors: Batuhan Erden, Cansu Yildirim, Anas Shahzad, Alexander Epple
+ */
+
 #include "include/GUI.h"
 
 int main(int argc, char *argv[]) {

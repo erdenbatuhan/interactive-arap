@@ -1,3 +1,12 @@
+/**
+ * Project: Interactive ARAP
+ * File:    GUI.cpp
+ * Authors: Batuhan Erden, Cansu Yildirim, Anas Shahzad, Alexander Epple
+ *
+ * Reference repositories:
+ *  - https://github.com/libigl/libigl/blob/main/tutorial/708_Picking/main.cpp
+ */
+
 #include "../include/GUI.h"
 
 GUI::GUI(const std::string& modelName) {

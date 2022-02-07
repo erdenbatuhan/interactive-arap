@@ -1,6 +1,7 @@
-#include "../include/Arap.h"
+/**
+ * Project: Interactive ARAP
+ * File:    Arap.cpp
+ * Authors: Batuhan Erden, Cansu Yildirim, Anas Shahzad, Alexander Epple
+ */
 
-void Arap::use(std::vector<glm::vec3> vertices, std::vector<unsigned int> ind, std::vector<int> anchorPoints) {}
-//void Arap::simpleARAP() {}
-//void Arap::skeletonARAP() {}
-//void Arap::cageARAP() {}
+#include "../include/Arap.h"

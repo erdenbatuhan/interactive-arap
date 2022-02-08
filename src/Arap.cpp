@@ -12,7 +12,7 @@ void Arap::updateParameters(const int movingVertex) {
     m_movingVertex = movingVertex;
 }
 
-std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXd& faces, std::vector<int>& anchorFaces) const {
+std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, std::vector<int>& anchorFaces) const {
     std::vector<int> fixedVertices;
 
     // Add the vertices of each face to the fixed vertices
@@ -20,15 +20,17 @@ std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXd& faces, std::vector<
         Eigen::VectorXi faceVertices = faces.row(anchorFace);
 
         for (int j = 0; j < faces.cols(); j++) {
-            fixedVertices.push_back(faceVertices(j));
+            fixedVertices.push_back(faces.row(anchorFace)(j));
         }
     }
 
     // Add the selected vertex to the fixed vertices
     fixedVertices.push_back(m_movingVertex);
+
+    return fixedVertices;
 }
 
-void Arap::runDeformation(Eigen::MatrixXd& vertices, Eigen::MatrixXd& faces, std::vector<int>& anchorFaceIds,
+void Arap::runDeformation(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces, std::vector<int>& anchorFaceIds,
                           std::map<int, std::vector<int>>& neighborhood) const {
     std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds);
 }

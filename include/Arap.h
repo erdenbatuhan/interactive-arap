@@ -19,8 +19,8 @@ public:
 
     void updateParameters(int);
 
-    std::vector<int> collectFixedVertices(Eigen::MatrixXd&, std::vector<int>&) const;
-    void runDeformation(Eigen::MatrixXd&, Eigen::MatrixXd&, std::vector<int>&, std::map<int, std::vector<int>>&) const;
+    std::vector<int> collectFixedVertices(Eigen::MatrixXi&, std::vector<int>&) const;
+    void runDeformation(Eigen::MatrixXd&, Eigen::MatrixXi&, std::vector<int>&, std::map<int, std::vector<int>>&) const;
 private:
     // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
     const std::map<int, std::vector<int>> m_neighborhood;

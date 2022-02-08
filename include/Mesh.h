@@ -35,7 +35,7 @@ private:
     Arap* arap;
 
     // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
-    const std::map<int, std::vector<int>> m_neighborhood;
+    std::map<int, std::vector<int>> m_neighborhood;
     void populateNeighborhood(); // Populates the neighborhood
 
     // Selections stored

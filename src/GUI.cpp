@@ -2,9 +2,6 @@
  * Project: Interactive ARAP
  * File:    GUI.cpp
  * Authors: Batuhan Erden, Cansu Yildirim, Anas Shahzad, Alexander Epple
- *
- * Reference repositories:
- *  - https://github.com/libigl/libigl/blob/main/tutorial/708_Picking/main.cpp
  */
 
 #include "../include/GUI.h"
@@ -77,8 +74,6 @@ bool GUI::handleSelection(igl::opengl::glfw::Viewer& viewer) {
             // Paint the face
             m_colors.row(faceId) << 1, 0, 0;
             viewer.data().set_colors(m_colors);
-
-            print_map(m_selectedAnchorVertexId);
         }
 
         return true;

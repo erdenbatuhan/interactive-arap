@@ -146,3 +146,4 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::Matri
 
     return deformedVertices;
 }
+

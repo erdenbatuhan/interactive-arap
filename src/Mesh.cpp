@@ -188,3 +188,4 @@ void Mesh::launchViewer() {
     // Launch the glfw viewer
     m_viewer.launch();
 }
+

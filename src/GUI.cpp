@@ -14,7 +14,7 @@ GUI::GUI(const std::string& modelName) {
     m_colors = Eigen::MatrixXd::Constant(m_faces.rows(), 3, 1);
 }
 
-std::vector<int> GUI::getSelectedFaceIds() {
+std::vector<int> GUI::getSelectedFaceIds() const {
     std::vector<int> selectedFaceIds;
 
     for (const auto& entry : m_selectedAnchorVertexId) {
@@ -24,8 +24,8 @@ std::vector<int> GUI::getSelectedFaceIds() {
     return selectedFaceIds;
 }
 
-std::vector<int> GUI::getSelectedVertexIds() {
-    std::vector<int> selectedVertexIds;
+std::vector<Vertex> GUI::getSelectedVertices() const {
+    std::vector<Vertex> selectedVertexIds;
 
     for (const auto& entry : m_selectedAnchorVertexId) {
         selectedVertexIds.push_back(entry.second);
@@ -34,11 +34,49 @@ std::vector<int> GUI::getSelectedVertexIds() {
     return selectedVertexIds;
 }
 
-Eigen::Vector2f GUI::getMousePosition() {
+Eigen::Vector2f GUI::getMousePosition() const {
     return Eigen::Vector2f { m_viewer.current_mouse_x, m_viewer.core().viewport(3) - (float) m_viewer.current_mouse_y };
 }
 
-Eigen::Vector3f GUI::convertCameraToWorldPosition(int vertexId) {
+int GUI::findClosestVertexIdToSelection(const int faceId, const Eigen::Vector3f& barycentricPosition) {
+    // Vertex with the highest coefficient is the closest (P = wA + uB + vC)
+    int maxCoefficient; barycentricPosition.maxCoeff(&maxCoefficient);
+    return m_faces.row(faceId)(maxCoefficient);
+}
+
+std::vector<int> GUI::findNeighborIds(const int vertexId) const {
+    std::vector<int> allNeighbors;
+    std::vector<int> distinctNeighbors;
+
+    // Iterate over the edges
+    for (int i = 0; i < m_faces.rows(); i++) {
+        if (m_faces(i, 0) == vertexId) {
+            allNeighbors.push_back(m_faces(i, 1));
+            allNeighbors.push_back(m_faces(i, 2));
+        }
+
+        if (m_faces(i, 1) == vertexId) {
+            allNeighbors.push_back(m_faces(i, 0));
+            allNeighbors.push_back(m_faces(i, 2));
+        }
+
+        if (m_faces(i, 2) == vertexId) {
+            allNeighbors.push_back(m_faces(i, 0));
+            allNeighbors.push_back(m_faces(i, 1));
+        }
+    }
+
+    for (auto neighbor : allNeighbors) {
+        // Push to distinct neighbors if it is not in the list
+        if (std::find(distinctNeighbors.begin(), distinctNeighbors.end(), neighbor) == distinctNeighbors.end()) {
+            distinctNeighbors.push_back(neighbor);
+        }
+    }
+
+    return distinctNeighbors;
+}
+
+Eigen::Vector3f GUI::convertCameraToWorldPosition(int vertexId) const {
     Eigen::Vector2f position = getMousePosition();
 
     Eigen::Vector3f projection = igl::project((Eigen::Vector3f) m_vertices.row(vertexId).cast<float>(),
@@ -49,12 +87,6 @@ Eigen::Vector3f GUI::convertCameraToWorldPosition(int vertexId) {
     return worldPosition;
 }
 
-int GUI::findClosestVertexToSelection(const int faceId, const Eigen::Vector3f& barycentricPosition) const {
-    // Vertex with the highest coefficient is the closest (P = wA + uB + vC)
-    int maxCoefficient; barycentricPosition.maxCoeff(&maxCoefficient);
-    return m_faces.row(faceId)(maxCoefficient);
-}
-
 bool GUI::handleSelection(igl::opengl::glfw::Viewer& viewer) {
     int faceId;
 
@@ -63,13 +95,15 @@ bool GUI::handleSelection(igl::opengl::glfw::Viewer& viewer) {
 
     if (igl::unproject_onto_mesh(mousePosition, viewer.core().view, viewer.core().proj, viewer.core().viewport,
                                  m_vertices, m_faces, faceId, barycentricPosition)) {
-        const int closestVertexToSelection = findClosestVertexToSelection(faceId, barycentricPosition);
+        const int closestVertexIdToSelection = findClosestVertexIdToSelection(faceId, barycentricPosition);
 
         if (m_arapInProgress) { // Running the ARAP
-            m_currentAnchorVertexId = closestVertexToSelection;
+            m_currentAnchorVertexId = closestVertexIdToSelection;
         } else { // Selecting the anchor points
             // Store the selections (each selected face stores the closest vertex to the selection)
-            m_selectedAnchorVertexId[faceId] = closestVertexToSelection;
+            m_selectedAnchorVertexId[faceId] = Vertex {
+                closestVertexIdToSelection, findNeighborIds(closestVertexIdToSelection)
+            };
 
             // Paint the face
             m_colors.row(faceId) << 1, 0, 0;
@@ -103,9 +137,11 @@ void GUI::handleMouseMoveEvent() {
         if (m_mouseDownBeingRecorded) {
             if (m_arapInProgress) { // Running ARAP
                 std::cout << m_currentAnchorVertexId << std::endl;
-            } else { // Selecting anchor points
-                return handleSelection(viewer);
+                return true;
             }
+
+            // Selecting anchor points
+            return handleSelection(viewer);
         }
 
         return false;

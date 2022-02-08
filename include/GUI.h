@@ -16,6 +16,8 @@
 
 #define INVALID_VERTEX_ID -1
 
+struct Vertex { int id; std::vector<int> neighborIds; };
+
 class GUI {
 public:
     explicit GUI(const std::string&);
@@ -24,14 +26,14 @@ public:
     void launchViewer();
 private:
     // Vertices, colors and faces of the model
-    Eigen::MatrixXd m_vertices, m_colors;
-    Eigen::MatrixXi m_faces;
+    Eigen::MatrixXd m_vertices{}, m_colors{};
+    Eigen::MatrixXi m_faces{};
 
     // GLFW viewer
-    igl::opengl::glfw::Viewer m_viewer;
+    igl::opengl::glfw::Viewer m_viewer{};
 
     // Selections stored
-    std::map<int, int> m_selectedAnchorVertexId; // Each selected face stores the closest vertex to the selection
+    std::map<int, Vertex> m_selectedAnchorVertexId; // Each selected face stores the closest vertex to the selection
     int m_currentAnchorVertexId = INVALID_VERTEX_ID; // The closest vertex to the latest selection is stored for ARAP
 
     // State variables that is keeping track of the state
@@ -39,17 +41,20 @@ private:
     bool m_arapInProgress = false; // True when ARAP is running
 
     // Returns selection in a vector
-    std::vector<int> getSelectedFaceIds();
-    std::vector<int> getSelectedVertexIds();
+    std::vector<int> getSelectedFaceIds() const;
+    std::vector<Vertex> getSelectedVertices() const;
 
     // Returns the mouse position
-    Eigen::Vector2f getMousePosition();
-
-    // Converts the camera position of the vertex to a world position
-    Eigen::Vector3f convertCameraToWorldPosition(int);
+    Eigen::Vector2f getMousePosition() const;
 
     // Finds the closest vertex index to a selected face
-    int findClosestVertexToSelection(int, const Eigen::Vector3f&) const;
+    int findClosestVertexIdToSelection(int, const Eigen::Vector3f&);
+
+    // Finds the neighbors of a vertex
+    std::vector<int> findNeighborIds(int) const;
+
+    // Converts the camera position of the vertex to a world position
+    Eigen::Vector3f convertCameraToWorldPosition(int) const;
 
     // Handles the selection (finds and stores the selected face and the closest vertex to the selection)
     bool handleSelection(igl::opengl::glfw::Viewer&);

@@ -20,7 +20,7 @@ std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, std::vector<
         Eigen::VectorXi faceVertices = faces.row(anchorFace);
 
         for (int j = 0; j < faces.cols(); j++) {
-            fixedVertices.push_back(faces.row(anchorFace)(j));
+            fixedVertices.push_back(faceVertices(j));
         }
     }
 
@@ -30,7 +30,7 @@ std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, std::vector<
     return fixedVertices;
 }
 
-Eigen::MatrixXd initializeWeightMatrix(Eigen::MatrixXd& vertices, std::map<int, std::vector<int>>& neighborhood) {
+Eigen::MatrixXd Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, std::map<int, std::vector<int>>& neighborhood) {
     Eigen::MatrixXd weightMatrix = Eigen::MatrixXd::Ones(vertices.rows(), vertices.rows());
     return weightMatrix;
 }

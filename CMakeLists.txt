@@ -11,15 +11,16 @@ project(interactive_arap)
 # Set the library directory for additional libraries
 set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs CACHE PATH "Path to the library folder containing additional libraries")
 
-# Dependency: ceres
-set(Ceres_DIR ${LIBRARY_DIR}/ceres/cmake CACHE PATH "Path to Ceres")
-find_package(Ceres REQUIRED)
-
 # Dependency: libigl
 list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/libigl)
 option(LIBIGL_WITH_OPENGL "Use OpenGL" ON)
 option(LIBIGL_WITH_OPENGL_GLFW "Use GLFW" ON)
 include(libigl)
+
+# Dependency: ceres
+set(glog_DIR ${LIBRARY_DIR}/glog/lib/cmake/glog CACHE PATH "Path to glog")
+set(Ceres_DIR ${LIBRARY_DIR}/ceres/cmake CACHE PATH "Path to Ceres")
+find_package(Ceres REQUIRED)
 
 # Set header and source files
 file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h) # Set header files
@@ -27,7 +28,7 @@ file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp) # Set source files
 
 # Add executable and link it to the libraries
 add_executable(${PROJECT_NAME} main.cpp ${SOURCE_FILES} ${HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} PUBLIC ceres igl::core igl::opengl_glfw)
+target_link_libraries(${PROJECT_NAME} PUBLIC igl::core igl::opengl_glfw ceres)
 
 # Copy resources (models & shaders)
 add_custom_command(TARGET ${PROJECT_NAME}

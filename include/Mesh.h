@@ -7,11 +7,17 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
+#define CERES 1
+
 #include <igl/readOFF.h>
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/unproject_onto_mesh.h>
 
+#ifdef CERES
+#include "Arap-Ceres.h"
+#else
 #include "Arap.h"
+#endif
 
 #include <map>
 #include <vector>

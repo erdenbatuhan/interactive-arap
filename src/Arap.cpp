@@ -88,7 +88,7 @@ std::vector<Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVertices,
     return rotationMatrices;
 }
 
-Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd& vertices,
+Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices,
                                  std::map<int, std::vector<int>>& neighborhood, const std::vector<int>& fixedVertices,
                                  Eigen::MatrixXd weightMatrix, std::vector<Matrix3d> rotationMatrices) {
     Eigen::MatrixXd rhs = MatrixXd::Zero(vertices.rows(), 3);
@@ -131,10 +131,12 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::Matri
     // Optimize over some iterations
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         // Estimate rotations
-        const std::vector<Matrix3d> rotationMatrices = estimateRotations(deformedVertices, vertices, neighborhood, weightMatrix);
+        const std::vector<Matrix3d> rotationMatrices = estimateRotations(deformedVertices, vertices,
+                                                                         neighborhood, weightMatrix);
 
         // Compute RHS
-        Eigen::MatrixXd rhs = computeRHS(deformedVertices, vertices, neighborhood, fixedVertices, weightMatrix, rotationMatrices);
+        Eigen::MatrixXd rhs = computeRHS(vertices, neighborhood, fixedVertices,
+                                         weightMatrix, rotationMatrices);
 
         // Update system matrix on fixed vertices to keep the fixed vertices stay where they are
         updateSystemMatrixOnFixedVertices(vertices, fixedVertices, systemMatrix);

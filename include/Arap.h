@@ -35,8 +35,7 @@ private:
     static Eigen::MatrixXd computeSystemMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, Eigen::MatrixXd&);
     static std::vector<Matrix3d> estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
                                                    Eigen::MatrixXd&);
-    static Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, Eigen::MatrixXd&,
-                                      std::map<int, std::vector<int>>&, const std::vector<int>&,
+    static Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, const std::vector<int>&,
                                       Eigen::MatrixXd, std::vector<Matrix3d>);
     static void updateSystemMatrixOnFixedVertices(Eigen::MatrixXd&, const std::vector<int>&, Eigen::MatrixXd);
 };

@@ -13,8 +13,15 @@ Mesh::Mesh(const std::string& modelName) {
     // Initialize white colors
     m_colors = Eigen::MatrixXd::Constant(m_faces.rows(), 3, 1);
 
-    // Populate neighbors
+    // Populate neighborhood: Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
     populateNeighborhood();
+
+    // Instantiate ARAP instance
+    arap = new Arap();
+}
+
+Mesh::~Mesh() {
+    delete arap;
 }
 
 void Mesh::populateNeighborhood() {
@@ -55,7 +62,7 @@ Eigen::Vector2f Mesh::getMousePosition() const {
     return Eigen::Vector2f { m_viewer.current_mouse_x, m_viewer.core().viewport(3) - (float) m_viewer.current_mouse_y };
 }
 
-int Mesh::findClosestVertexIdToSelection(const int faceId, const Eigen::Vector3f& barycentricPosition) {
+int Mesh::findClosestVertexToSelection(const int faceId, const Eigen::Vector3f& barycentricPosition) {
     // Vertex with the highest coefficient is the closest (P = wA + uB + vC)
     int maxCoefficient; barycentricPosition.maxCoeff(&maxCoefficient);
     return m_faces.row(faceId)(maxCoefficient);
@@ -81,7 +88,8 @@ bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool togglea
     if (igl::unproject_onto_mesh(mousePosition, viewer.core().view, viewer.core().proj, viewer.core().viewport,
                                  m_vertices, m_faces, faceId, barycentricPosition)) {
         if (m_arapInProgress) { // Running the ARAP
-            m_movingVertexId = findClosestVertexIdToSelection(faceId, barycentricPosition);
+            int movingVertex = findClosestVertexToSelection(faceId, barycentricPosition);
+            arap->updateParameters(movingVertex);
         } else { // Anchor point selection
             const bool selected = !toggleable || !m_anchorSelections[faceId];
 
@@ -122,7 +130,6 @@ void Mesh::handleMouseMoveEvent() {
     m_viewer.callback_mouse_move = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
         if (m_mouseDownBeingRecorded) {
             if (m_arapInProgress) { // Running ARAP
-                std::cout << m_movingVertexId << std::endl;
                 return true;
             }
 

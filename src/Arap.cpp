@@ -6,6 +6,34 @@
 
 #include "../include/Arap.h"
 
+Arap::Arap() = default;
+
+void Arap::updateParameters(const int movingVertex) {
+    m_movingVertex = movingVertex;
+}
+
+std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXd& faces, std::vector<int>& anchorFaces) const {
+    std::vector<int> fixedVertices;
+
+    // Add the vertices of each face to the fixed vertices
+    for (int anchorFace : anchorFaces) {
+        Eigen::VectorXi faceVertices = faces.row(anchorFace);
+
+        for (int j = 0; j < faces.cols(); j++) {
+            fixedVertices.push_back(faceVertices(j));
+        }
+    }
+
+    // Add the selected vertex to the fixed vertices
+    fixedVertices.push_back(m_movingVertex);
+}
+
+void Arap::runDeformation(Eigen::MatrixXd& vertices, Eigen::MatrixXd& faces, std::vector<int>& anchorFaceIds,
+                          std::map<int, std::vector<int>>& neighborhood) const {
+    std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds);
+}
+
+
 int distBetRayPoint_anchor(glm::vec3 raynorm, glm::vec3 rayPoint, mesh3d thishelp, glm::mat4 globalmodel, float globalthresAnchor, float& min2ray) {
     glm::vec3 point1 = rayPoint;
     float y_sec = (-1 * rayPoint[0] * raynorm[1] / raynorm[0]) + rayPoint[1];

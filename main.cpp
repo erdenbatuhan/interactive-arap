@@ -4,11 +4,11 @@
  * Authors: Batuhan Erden, Cansu Yildirim, Anas Shahzad, Alexander Epple
  */
 
-#include "include/GUI.h"
+#include "include/Mesh.h"
 
 int main(int argc, char *argv[]) {
-   GUI gui("resources/models/armadillo_1k.off");
-   gui.launchViewer();
+   Mesh mesh("resources/models/armadillo_1k.off");
+   mesh.launchViewer();
 
    return 0;
 }

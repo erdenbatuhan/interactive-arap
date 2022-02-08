@@ -4,79 +4,64 @@
  * Authors: Batuhan Erden, Cansu Yildirim, Anas Shahzad, Alexander Epple
  */
 
-#include "../include/GUI.h"
+#include "../include/Mesh.h"
 
-GUI::GUI(const std::string& modelName) {
+Mesh::Mesh(const std::string& modelName) {
     // Load a mesh in OFF format
     igl::readOFF(modelName, m_vertices, m_faces);
 
     // Initialize white colors
     m_colors = Eigen::MatrixXd::Constant(m_faces.rows(), 3, 1);
+
+    // Populate neighbors
+    populateNeighborhood();
 }
 
-std::vector<int> GUI::getSelectedFaceIds() const {
-    std::vector<int> selectedFaceIds;
+void Mesh::populateNeighborhood() {
+    for (int vertexId = 0; vertexId < m_vertices.rows(); vertexId++) {
+        std::vector<int> allNeighbors;
+        std::vector<int> distinctNeighbors;
 
-    for (const auto& entry : m_selectedAnchorVertexId) {
-        selectedFaceIds.push_back(entry.first);
+        // Iterate over the edges
+        for (int faceId = 0; faceId < m_faces.rows(); faceId++) {
+            if (m_faces(faceId, 0) == vertexId) {
+                allNeighbors.push_back(m_faces(faceId, 1));
+                allNeighbors.push_back(m_faces(faceId, 2));
+            }
+
+            if (m_faces(faceId, 1) == vertexId) {
+                allNeighbors.push_back(m_faces(faceId, 0));
+                allNeighbors.push_back(m_faces(faceId, 2));
+            }
+
+            if (m_faces(faceId, 2) == vertexId) {
+                allNeighbors.push_back(m_faces(faceId, 0));
+                allNeighbors.push_back(m_faces(faceId, 1));
+            }
+        }
+
+        for (auto neighbor: allNeighbors) {
+            // Push to distinct neighbors if it is not in the list
+            if (std::find(distinctNeighbors.begin(), distinctNeighbors.end(), neighbor) == distinctNeighbors.end()) {
+                distinctNeighbors.push_back(neighbor);
+            }
+        }
+
+        m_neighborhood[vertexId] = distinctNeighbors;
     }
-
-    return selectedFaceIds;
 }
 
-std::vector<Vertex> GUI::getSelectedVertices() const {
-    std::vector<Vertex> selectedVertexIds;
-
-    for (const auto& entry : m_selectedAnchorVertexId) {
-        selectedVertexIds.push_back(entry.second);
-    }
-
-    return selectedVertexIds;
-}
-
-Eigen::Vector2f GUI::getMousePosition() const {
+Eigen::Vector2f Mesh::getMousePosition() const {
     return Eigen::Vector2f { m_viewer.current_mouse_x, m_viewer.core().viewport(3) - (float) m_viewer.current_mouse_y };
 }
 
-int GUI::findClosestVertexIdToSelection(const int faceId, const Eigen::Vector3f& barycentricPosition) {
+int Mesh::findClosestVertexIdToSelection(const int faceId, const Eigen::Vector3f& barycentricPosition) {
     // Vertex with the highest coefficient is the closest (P = wA + uB + vC)
     int maxCoefficient; barycentricPosition.maxCoeff(&maxCoefficient);
     return m_faces.row(faceId)(maxCoefficient);
 }
 
-std::vector<int> GUI::findNeighborIds(const int vertexId) const {
-    std::vector<int> allNeighbors;
-    std::vector<int> distinctNeighbors;
-
-    // Iterate over the edges
-    for (int i = 0; i < m_faces.rows(); i++) {
-        if (m_faces(i, 0) == vertexId) {
-            allNeighbors.push_back(m_faces(i, 1));
-            allNeighbors.push_back(m_faces(i, 2));
-        }
-
-        if (m_faces(i, 1) == vertexId) {
-            allNeighbors.push_back(m_faces(i, 0));
-            allNeighbors.push_back(m_faces(i, 2));
-        }
-
-        if (m_faces(i, 2) == vertexId) {
-            allNeighbors.push_back(m_faces(i, 0));
-            allNeighbors.push_back(m_faces(i, 1));
-        }
-    }
-
-    for (auto neighbor : allNeighbors) {
-        // Push to distinct neighbors if it is not in the list
-        if (std::find(distinctNeighbors.begin(), distinctNeighbors.end(), neighbor) == distinctNeighbors.end()) {
-            distinctNeighbors.push_back(neighbor);
-        }
-    }
-
-    return distinctNeighbors;
-}
-
-Eigen::Vector3f GUI::convertCameraToWorldPosition(int vertexId) const {
+Eigen::Vector3f Mesh::convertCameraToWorldPosition(int vertexId) const {
     Eigen::Vector2f position = getMousePosition();
 
     Eigen::Vector3f projection = igl::project((Eigen::Vector3f) m_vertices.row(vertexId).cast<float>(),
@@ -87,7 +72,7 @@ Eigen::Vector3f GUI::convertCameraToWorldPosition(int vertexId) const {
     return worldPosition;
 }
 
-bool GUI::handleSelection(igl::opengl::glfw::Viewer& viewer) {
+bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool toggleable = true) {
     int faceId;
 
     Eigen::Vector2f mousePosition = getMousePosition();
@@ -95,18 +80,16 @@ bool GUI::handleSelection(igl::opengl::glfw::Viewer& viewer) {
 
     if (igl::unproject_onto_mesh(mousePosition, viewer.core().view, viewer.core().proj, viewer.core().viewport,
                                  m_vertices, m_faces, faceId, barycentricPosition)) {
-        const int closestVertexIdToSelection = findClosestVertexIdToSelection(faceId, barycentricPosition);
-
         if (m_arapInProgress) { // Running the ARAP
-            m_currentAnchorVertexId = closestVertexIdToSelection;
-        } else if (m_selectedAnchorVertexId[faceId].id == INVALID_VERTEX_ID) { // Selecting the anchor point if it is not selected
-            // Store the selections (each selected face stores the closest vertex to the selection)
-            m_selectedAnchorVertexId[faceId] = Vertex {
-                closestVertexIdToSelection, findNeighborIds(closestVertexIdToSelection)
-            };
+            m_movingVertexId = findClosestVertexIdToSelection(faceId, barycentricPosition);
+        } else { // Anchor point selection
+            const bool selected = !toggleable || !m_anchorSelections[faceId];
+
+            // Store the selections
+            m_anchorSelections[faceId] = selected;
 
             // Set the color for the selected face
-            m_colors.row(faceId) << 1, 0, 0;
+            m_colors.row(faceId) << 1, !selected, !selected;
             viewer.data().set_colors(m_colors);
 
             // Paint
@@ -119,7 +102,7 @@ bool GUI::handleSelection(igl::opengl::glfw::Viewer& viewer) {
     return false;
 }
 
-void GUI::handleMouseDownEvent() {
+void Mesh::handleMouseDownEvent() {
     m_viewer.callback_mouse_down = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
         const bool selectionHandled = handleSelection(viewer);
 
@@ -128,38 +111,40 @@ void GUI::handleMouseDownEvent() {
     };
 }
 
-void GUI::handleMouseReleaseEvent() {
+void Mesh::handleMouseReleaseEvent() {
     m_viewer.callback_mouse_up = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
         m_mouseDownBeingRecorded = false;
         return true;
     };
 }
 
-void GUI::handleMouseMoveEvent() {
+void Mesh::handleMouseMoveEvent() {
     m_viewer.callback_mouse_move = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
         if (m_mouseDownBeingRecorded) {
             if (m_arapInProgress) { // Running ARAP
-                std::cout << m_currentAnchorVertexId << std::endl;
+                std::cout << m_movingVertexId << std::endl;
                 return true;
             }
 
             // Selecting anchor points
-            return handleSelection(viewer);
+            return handleSelection(viewer, false);
         }
 
         return false;
     };
 }
 
-void GUI::handleKeyDownEvent() {
+void Mesh::handleKeyDownEvent() {
     m_viewer.callback_key_down = [this](igl::opengl::glfw::Viewer& viewer, unsigned char keyPressed, int) -> bool {
-        if (keyPressed == 'A') { // Toggle ARAP
-            m_arapInProgress = !m_arapInProgress;
-            std::vector<int> selectedFaceIds = getSelectedFaceIds();
+        if (keyPressed == 'A') { // ARAP
+            m_arapInProgress = !m_arapInProgress; // Toggle ARAP
 
-            // Visualize the selection toggle for selected faces (Red when selecting, Green when performing arap)
-            for (int& selectedFaceId : selectedFaceIds) {
-                m_colors.row(selectedFaceId) << !m_arapInProgress, m_arapInProgress, 0;
+            std::vector<int> selectedFaceIds;
+            for (const auto& entry : m_anchorSelections) {
+                if (entry.second) {
+                    selectedFaceIds.push_back(entry.first);
+                    m_colors.row(entry.first) << !m_arapInProgress, m_arapInProgress, 0; // R = Selection, G = ARAP
+                }
             }
 
             viewer.data().set_colors(m_colors);
@@ -168,7 +153,7 @@ void GUI::handleKeyDownEvent() {
             m_arapInProgress = false; // Stop ARAP
 
             // Remove the selections stored
-            m_selectedAnchorVertexId.clear();
+            m_anchorSelections.clear();
 
             // Remove all the paints
             m_colors = Eigen::MatrixXd::Constant(m_faces.rows(), 3, 1);
@@ -182,7 +167,7 @@ void GUI::handleKeyDownEvent() {
     };
 }
 
-void GUI::launchViewer() {
+void Mesh::launchViewer() {
     // Call event handlers
     handleMouseDownEvent();
     handleMouseReleaseEvent();

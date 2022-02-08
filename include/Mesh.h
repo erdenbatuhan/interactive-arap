@@ -43,7 +43,6 @@ private:
 
     // State variables that is keeping track of the state
     bool m_mouseDownBeingRecorded = false; // True when mouse down event is being recorded
-    bool m_arapPrepared = false; // True when ARAP is prepared
     bool m_arapInProgress = false; // True when ARAP is running
 
     // Returns the mouse position
@@ -54,6 +53,9 @@ private:
 
     // Converts the camera position of the vertex to a world position
     Eigen::Vector3f convertCameraToWorldPosition(int) const;
+
+    // Computes the ARAP deformation
+    void computeDeformation(igl::opengl::glfw::Viewer&);
 
     // Handles the selection (finds and stores the selected face and the closest vertex to the selection)
     bool handleSelection(igl::opengl::glfw::Viewer&, bool);

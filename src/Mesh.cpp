@@ -69,11 +69,13 @@ int Mesh::findClosestVertexToSelection(const int faceId, const Eigen::Vector3f& 
 }
 
 Eigen::Vector3f Mesh::convertCameraToWorldPosition(int vertexId) const {
-    Eigen::Vector2f position = getMousePosition();
+    Eigen::Vector2f mousePosition = getMousePosition();
+    Eigen::Vector3f vertexPosition = {
+        (float) m_vertices.row(vertexId).x(), (float) m_vertices.row(vertexId).y(), (float) m_vertices.row(vertexId).z()
+    };
 
-    Eigen::Vector3f projection = igl::project((Eigen::Vector3f) m_vertices.row(vertexId).cast<float>(),
-                                              m_viewer.core().view, m_viewer.core().proj, m_viewer.core().viewport);
-    Eigen::Vector3f worldPosition = igl::unproject(Eigen::Vector3f(position.x(), position.y(), (float) projection.z()),
+    Eigen::Vector3f projection = igl::project(vertexPosition, m_viewer.core().view, m_viewer.core().proj, m_viewer.core().viewport);
+    Eigen::Vector3f worldPosition = igl::unproject(Eigen::Vector3f(mousePosition.x(), mousePosition.y(), projection.z()),
                                                    m_viewer.core().view, m_viewer.core().proj, m_viewer.core().viewport);
 
     return worldPosition;
@@ -87,9 +89,9 @@ bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool togglea
 
     if (igl::unproject_onto_mesh(mousePosition, viewer.core().view, viewer.core().proj, viewer.core().viewport,
                                  m_vertices, m_faces, faceId, barycentricPosition)) {
-        if (m_arapInProgress) { // Running the ARAP
+        if (m_arapPrepared) { // ARAP
             int movingVertex = findClosestVertexToSelection(faceId, barycentricPosition);
-            arap->updateParameters(movingVertex);
+            arap->updateParameters(movingVertex, convertCameraToWorldPosition(movingVertex));
         } else { // Anchor point selection
             const bool selected = !toggleable || !m_anchorSelections[faceId];
 
@@ -128,8 +130,26 @@ void Mesh::handleMouseReleaseEvent() {
 
 void Mesh::handleMouseMoveEvent() {
     m_viewer.callback_mouse_move = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
-        if (m_mouseDownBeingRecorded) {
-            if (m_arapInProgress) { // Running ARAP
+        if (!m_arapInProgress && m_mouseDownBeingRecorded) {
+            if (m_arapPrepared) { // ARAP
+                // Extract selected faces to a list
+                std::vector<int> selectedFaceIds;
+                for (auto entry : m_anchorSelections) {
+                    if (entry.second) { // If selected
+                        selectedFaceIds.push_back(entry.first);
+                    }
+                }
+
+                // compute deformation
+                m_arapInProgress = true;
+
+                MatrixXd deformedVertices = arap->computeDeformation(m_vertices, m_faces, m_neighborhood, selectedFaceIds);
+                m_vertices = deformedVertices.replicate(deformedVertices.rows(), deformedVertices.cols());
+
+                viewer.data().compute_normals();
+                viewer.data().set_mesh(m_vertices, m_faces);
+
+                m_arapInProgress = false;
                 return true;
             }
 
@@ -144,20 +164,20 @@ void Mesh::handleMouseMoveEvent() {
 void Mesh::handleKeyDownEvent() {
     m_viewer.callback_key_down = [this](igl::opengl::glfw::Viewer& viewer, unsigned char keyPressed, int) -> bool {
         if (keyPressed == 'A') { // ARAP
-            m_arapInProgress = !m_arapInProgress; // Toggle ARAP
+            m_arapPrepared = !m_arapPrepared; // Toggle ARAP
 
             std::vector<int> selectedFaceIds;
             for (const auto& entry : m_anchorSelections) {
                 if (entry.second) {
                     selectedFaceIds.push_back(entry.first);
-                    m_colors.row(entry.first) << !m_arapInProgress, m_arapInProgress, 0; // R = Selection, G = ARAP
+                    m_colors.row(entry.first) << !m_arapPrepared, m_arapPrepared, 0; // R = Selection, G = ARAP
                 }
             }
 
             viewer.data().set_colors(m_colors);
             return true;
         } else if (keyPressed == 'R') { // Reset selections
-            m_arapInProgress = false; // Stop ARAP
+            m_arapPrepared = false; // Stop ARAP
 
             // Remove the selections stored
             m_anchorSelections.clear();
@@ -169,7 +189,7 @@ void Mesh::handleKeyDownEvent() {
             return true;
         }
 
-        m_arapInProgress = false;
+        m_arapPrepared = false;
         return false;
     };
 }

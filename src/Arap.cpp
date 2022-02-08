@@ -8,8 +8,9 @@
 
 Arap::Arap() = default;
 
-void Arap::updateParameters(const int movingVertex) {
+void Arap::updateParameters(const int movingVertex, const Eigen::Vector3f& movingVertexPosition) {
     m_movingVertex = movingVertex;
+    m_movingVertexPosition = movingVertexPosition.cast<double>();
 }
 
 std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, std::vector<int>& anchorFaces) const {
@@ -90,14 +91,14 @@ std::vector<Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVertices,
 
 Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices,
                                  std::map<int, std::vector<int>>& neighborhood, const std::vector<int>& fixedVertices,
-                                 Eigen::MatrixXd weightMatrix, std::vector<Matrix3d> rotationMatrices) {
+                                 Eigen::MatrixXd weightMatrix, std::vector<Matrix3d> rotationMatrices) const {
     Eigen::MatrixXd rhs = MatrixXd::Zero(vertices.rows(), 3);
 
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
         Eigen::Vector3d rhsRow = Eigen::Vector3d(0.0, 0.0, 0.0);
 
         if (std::find(fixedVertices.begin(), fixedVertices.end(), i) != fixedVertices.end()) { // Current vertex is a fixed vertex
-            rhsRow = vertices.row(i);
+            rhsRow = (i != m_movingVertex) ? vertices.row(i) : m_movingVertexPosition; // If the vertex is the moving one, get the new position
         } else { // Current vertex is not a fixed vertex but a to-be-deformed vertex
             for (int neighbor : neighborhood[i]) { // Iterate over the neighbors
                 rhsRow += 0.5 * weightMatrix(i, neighbor) *
@@ -122,7 +123,7 @@ void Arap::updateSystemMatrixOnFixedVertices(Eigen::MatrixXd& vertices, const st
 
 Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces,
                                          std::map<int, std::vector<int>>& neighborhood, std::vector<int>& anchorFaceIds) {
-    Eigen::MatrixXd deformedVertices; // Deformed vertices are stored in a different matrix
+    Eigen::MatrixXd deformedVertices = vertices.replicate(vertices.rows(), vertices.cols()); // Deformed vertices are stored in a different matrix
     std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds); // Collect all fixed vertices in a list
 
     Eigen::MatrixXd weightMatrix = initializeWeightMatrix(vertices, neighborhood); // Weights

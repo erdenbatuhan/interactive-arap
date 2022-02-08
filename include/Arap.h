@@ -20,13 +20,14 @@ public:
     Arap();
     ~Arap() = default;
 
-    void updateParameters(int);
+    void updateParameters(int, const Eigen::Vector3f&);
 
     std::vector<int> collectFixedVertices(Eigen::MatrixXi&, std::vector<int>&) const;
     Eigen::MatrixXd computeDeformation(Eigen::MatrixXd&, Eigen::MatrixXi&, std::map<int, std::vector<int>>&, std::vector<int>&);
 private:
     // The current moving vertex
     int m_movingVertex{};
+    Eigen::Vector3d m_movingVertexPosition{};
 
     // Solver
     Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
@@ -36,8 +37,8 @@ private:
     static Eigen::MatrixXd computeSystemMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, Eigen::MatrixXd&);
     static std::vector<Matrix3d> estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
                                                    Eigen::MatrixXd&);
-    static Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, const std::vector<int>&,
-                                      Eigen::MatrixXd, std::vector<Matrix3d>);
+    Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, const std::vector<int>&,
+                               Eigen::MatrixXd, std::vector<Matrix3d>) const;
     static void updateSystemMatrixOnFixedVertices(Eigen::MatrixXd&, const std::vector<int>&, Eigen::MatrixXd);
 };
 

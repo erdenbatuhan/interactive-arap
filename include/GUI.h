@@ -16,7 +16,7 @@
 
 #define INVALID_VERTEX_ID -1
 
-struct Vertex { int id; std::vector<int> neighborIds; };
+struct Vertex { int id = INVALID_VERTEX_ID; std::vector<int> neighborIds; };
 
 class GUI {
 public:

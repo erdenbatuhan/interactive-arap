@@ -99,14 +99,17 @@ bool GUI::handleSelection(igl::opengl::glfw::Viewer& viewer) {
 
         if (m_arapInProgress) { // Running the ARAP
             m_currentAnchorVertexId = closestVertexIdToSelection;
-        } else { // Selecting the anchor points
+        } else if (m_selectedAnchorVertexId[faceId].id == INVALID_VERTEX_ID) { // Selecting the anchor point if it is not selected
             // Store the selections (each selected face stores the closest vertex to the selection)
             m_selectedAnchorVertexId[faceId] = Vertex {
                 closestVertexIdToSelection, findNeighborIds(closestVertexIdToSelection)
             };
 
-            // Paint the face
+            // Set the color for the selected face
             m_colors.row(faceId) << 1, 0, 0;
+            viewer.data().set_colors(m_colors);
+
+            // Paint
             viewer.data().set_colors(m_colors);
         }
 
@@ -162,6 +165,8 @@ void GUI::handleKeyDownEvent() {
             viewer.data().set_colors(m_colors);
             return true;
         } else if (keyPressed == 'R') { // Reset selections
+            m_arapInProgress = false; // Stop ARAP
+
             // Remove the selections stored
             m_selectedAnchorVertexId.clear();
 

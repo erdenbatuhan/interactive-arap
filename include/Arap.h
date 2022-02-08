@@ -11,6 +11,9 @@
 
 #include <map>
 #include <vector>
+#include <utility>
+
+#define NUM_ITERATIONS 1
 
 class Arap {
 public:
@@ -20,13 +23,22 @@ public:
     void updateParameters(int);
 
     std::vector<int> collectFixedVertices(Eigen::MatrixXi&, std::vector<int>&) const;
-    void runDeformation(Eigen::MatrixXd&, Eigen::MatrixXi&, std::vector<int>&, std::map<int, std::vector<int>>&) const;
+    Eigen::MatrixXd computeDeformation(Eigen::MatrixXd&, Eigen::MatrixXi&, std::map<int, std::vector<int>>&, std::vector<int>&);
 private:
-    // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
-    const std::map<int, std::vector<int>> m_neighborhood;
-
     // The current moving vertex
     int m_movingVertex{};
+
+    // Solver
+    Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+
+    // Functions used during deformation
+    static Eigen::MatrixXd computeSystemMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, Eigen::MatrixXd&);
+    static std::vector<Matrix3d> estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
+                                                   Eigen::MatrixXd&);
+    static Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, Eigen::MatrixXd&,
+                                      std::map<int, std::vector<int>>&, const std::vector<int>&,
+                                      Eigen::MatrixXd, std::vector<Matrix3d>);
+    static void updateSystemMatrixOnFixedVertices(Eigen::MatrixXd&, const std::vector<int>&, Eigen::MatrixXd);
 };
 
 #endif // _ARAP_H_

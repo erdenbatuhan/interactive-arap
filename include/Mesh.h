@@ -31,8 +31,8 @@ private:
     // GLFW viewer
     igl::opengl::glfw::Viewer m_viewer{};
 
-    // ARAP instances
-    Arap* arap;
+    // ARAP instance
+    Arap* arap{};
 
     // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
     std::map<int, std::vector<int>> m_neighborhood;

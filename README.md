@@ -6,11 +6,11 @@ https://igl.ethz.ch/projects/ARAP/
 
 ### Local Environment Setup
 
-#### Dependencies
+#### (1) Dependencies
 
 Make sure you have **OpenGL** and **CMake GUI** *(for ease of use)* installed on your system! One of the main dependencies, [libigl](https://libigl.github.io/tutorial/), will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
 
-##### Ceres
+##### (1.1) Ceres
 
 - Create a library directory: `mkdir libs`
 - Switch to this directory: `cd libs`

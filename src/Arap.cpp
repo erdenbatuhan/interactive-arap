@@ -88,16 +88,16 @@ void Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, Eigen::MatrixXi& fa
             double totalAngle = 0.0;
 
             for (const Eigen::Vector2i& edge : vertexEdges[i]) { // Iterate over the edges
-                double bc = (vertices.row(edge[0]) - vertices.row(edge[1])).norm(); // Norm between B and C
-                double ac = (vertices.row(i) - vertices.row(edge[1])).norm(); // Norm between A and C
-                double ab = (vertices.row(i) - vertices.row(edge[0])).norm(); // Norm between A and B
+                double norm_bc = (vertices.row(edge[0]) - vertices.row(edge[1])).norm(); // Norm between B and C
+                double norm_ac = (vertices.row(i) - vertices.row(edge[1])).norm(); // Norm between A and C
+                double norm_ab = (vertices.row(i) - vertices.row(edge[0])).norm(); // Norm between A and B
 
                 // From cosine law
-                double betta = acos(((ab * ab) + (bc * bc) - (ac * ac)) / (2 * ab * bc));
+                double beta = acos(((norm_ab * norm_ab) + (norm_bc * norm_bc) - (norm_ac * norm_ac)) / (2 * norm_ab * norm_bc));
 
                 // Add to total angle if one of the points on the edge is the current neighbor
-                totalAngle += (edge[0] == neighbor) * abs(tan(M_PI_2 - betta));
-                totalAngle += (edge[1] == neighbor) * abs(tan(M_PI_2 - betta));
+                totalAngle += (edge[0] == neighbor) * abs(tan(M_PI_2 - beta));
+                totalAngle += (edge[1] == neighbor) * abs(tan(M_PI_2 - beta));
             }
 
             m_weightMatrix(i, neighbor) = abs(totalAngle) / 2;

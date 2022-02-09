@@ -17,6 +17,8 @@
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
 
+#define EIGEN_USE_BLAS
+
 static inline Eigen::MatrixXd safeReplicate(Eigen::MatrixXd& matrix) {
     Eigen::MatrixXd newMatrix(matrix.rows(), matrix.cols());
 

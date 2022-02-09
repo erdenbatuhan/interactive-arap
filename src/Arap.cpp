@@ -8,11 +8,8 @@
 
 Arap::Arap() = default;
 
-void Arap::updateMovingVertex(const int movingVertex) {
+void Arap::updateMovingVertex(const int movingVertex, const Eigen::Vector3f& movingVertexPosition) {
     m_movingVertex = movingVertex;
-}
-
-void Arap::updateMovingVertexPosition(const Eigen::Vector3f& movingVertexPosition) {
     m_movingVertexPosition = movingVertexPosition.cast<double>();
 }
 
@@ -147,9 +144,5 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::Matri
     }
 
     return deformedVertices;
-}
-
-int Arap::getMovingVertex() const {
-    return m_movingVertex;
 }
 

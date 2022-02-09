@@ -17,6 +17,8 @@
 #include <map>
 #include <vector>
 
+#define INVALID_VERTEX -1
+
 class Mesh {
 public:
     explicit Mesh(const std::string&);
@@ -40,11 +42,12 @@ private:
     void populateNeighborhood(); // Populates the neighborhood
 
     // Selections stored
+    int m_movingVertex = INVALID_VERTEX; // Selected moving vertex to be used to perform ARAP
     std::map<int, bool> m_anchorSelections; // Selected faces (anchors)
 
     // State variables that is keeping track of the state
-    bool m_selectionInProgress = false; // True when selecting points
-    bool m_arapInProgress = false; // True when ARAP is running
+    bool m_selectionHandledOnMesh = false; // If clicked on a point on the mesh
+    bool m_arapInProgress = false; // If ARAP is running
 
     // Returns the mouse position
     Eigen::Vector2f getMousePosition() const;

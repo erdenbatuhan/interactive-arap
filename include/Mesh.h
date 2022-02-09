@@ -45,7 +45,6 @@ private:
     // State variables that is keeping track of the state
     bool m_mouseDownBeingRecorded = false; // True when mouse down event is being recorded
     bool m_arapPrepared = false; // True when ARAP is prepared
-    bool m_deformationInProgress = false; // True when ARAP is running
 
     // Returns the mouse position
     Eigen::Vector2f getMousePosition() const;

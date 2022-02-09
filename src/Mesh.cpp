@@ -129,12 +129,6 @@ void Mesh::handleMouseReleaseEvent() {
 }
 
 bool Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
-    if (m_deformationInProgress) {
-        return false;
-    }
-
-    m_deformationInProgress = true;
-
     // Extract selected faces to a list
     std::vector<int> selectedFaceIds;
     for (auto entry : m_anchorSelections) {
@@ -150,7 +144,6 @@ bool Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
     viewer.data().compute_normals();
     viewer.data().set_mesh(m_vertices, m_faces);
 
-    m_deformationInProgress = false;
     return true;
 }
 

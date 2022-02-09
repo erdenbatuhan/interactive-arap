@@ -88,7 +88,7 @@ void ArapDefault::estimateRotations(
             shared(vertices, neighborhood, weightMatrix, deformedVertices, rotationMatrices)
 #endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
-        const long numNeighbors = (long) (neighborhood[i].size());
+        const long numNeighbors = (long)(neighborhood[i].size());
 
         // The definitions for the matrices P, D and P_prime can be found in the paper!
         Eigen::MatrixXd P = Eigen::MatrixXd::Zero(3, numNeighbors);
@@ -105,7 +105,7 @@ void ArapDefault::estimateRotations(
         Eigen::Matrix3d S = P * D * P_prime.transpose();
 
         // SVD
-        Eigen::JacobiSVD<Eigen::Matrix3d> svd(S, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(S, Eigen::ComputeThinU | Eigen::ComputeThinV);
         const Eigen::Matrix3d& U = svd.matrixU();
         const Eigen::Matrix3d& V = svd.matrixV();
 

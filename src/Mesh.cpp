@@ -163,7 +163,7 @@ void Mesh::handleKeyDownEvent() {
 
             // Remove all the paints
             m_colors = Eigen::MatrixXd::Constant(m_faces.rows(), 3, 1);
-            m_viewer.data().set_colors(m_colors);
+            viewer.data().set_colors(m_colors);
 
             return true;
         }

@@ -145,7 +145,7 @@ bool Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
 
     // Compute deformation
     Eigen::MatrixXd deformedVertices = arap->computeDeformation(m_vertices, m_faces, m_neighborhood, selectedFaceIds);
-    replicate(m_vertices, deformedVertices);
+    m_vertices = safeReplicate(deformedVertices);
 
     viewer.data().compute_normals();
     viewer.data().set_mesh(m_vertices, m_faces);

@@ -123,8 +123,7 @@ void Arap::updateSystemMatrixOnFixedVertices(Eigen::MatrixXd& vertices, const st
 
 Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces,
                                          std::map<int, std::vector<int>>& neighborhood, std::vector<int>& anchorFaceIds) {
-    Eigen::MatrixXd deformedVertices(vertices.rows(), vertices.cols()); // Deformed vertices are stored in a different matrix
-    replicate(deformedVertices, vertices);
+    Eigen::MatrixXd deformedVertices = safeReplicate(vertices); // Deformed vertices are stored in a different matrix
 
     std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds); // Collect all fixed vertices in a list
 

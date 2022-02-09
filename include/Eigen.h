@@ -17,12 +17,16 @@
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
 
-static inline void replicate(Eigen::MatrixXd& in, Eigen::MatrixXd& other) {
-    for (unsigned int i = 0; i < other.rows(); i++) {
-        for (unsigned int j = 0; j < other.cols(); j++) {
-            in(i, j) = other(i, j);
+static inline Eigen::MatrixXd safeReplicate(Eigen::MatrixXd& matrix) {
+    Eigen::MatrixXd newMatrix(matrix.rows(), matrix.cols());
+
+    for (unsigned int i = 0; i < matrix.rows(); i++) {
+        for (unsigned int j = 0; j < matrix.cols(); j++) {
+            newMatrix(i, j) = matrix(i, j);
         }
     }
+
+    return newMatrix;
 }
 
 #endif // _EIGEN_H_

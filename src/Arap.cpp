@@ -48,9 +48,9 @@ Eigen::MatrixXd Arap::computeSystemMatrix(Eigen::MatrixXd& vertices, std::map<in
     }
 
     // Update system matrix on fixed vertices to keep the fixed vertices stay where they are
-    for (auto it = fixedVertices.begin(); it < fixedVertices.end(); it++) { // Iterate over the vertices
-        systemMatrix.row(*it).setZero();
-        systemMatrix(*it, *it) = 1;
+    for (int fixedVertex : fixedVertices) { // Iterate over the fixed vertices
+        systemMatrix.row(fixedVertex).setZero();
+        systemMatrix(fixedVertex, fixedVertex) = 1;
     }
 
     return systemMatrix;

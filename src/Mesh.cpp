@@ -89,7 +89,7 @@ bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool togglea
 
     if (igl::unproject_onto_mesh(mousePosition, viewer.core().view, viewer.core().proj, viewer.core().viewport,
                                  m_vertices, m_faces, faceId, barycentricPosition)) {
-        if (m_arapPrepared) { // ARAP
+        if (m_arapInProgress) { // ARAP
             int movingVertex = findClosestVertexToSelection(faceId, barycentricPosition);
             arap->updateParameters(movingVertex, convertCameraToWorldPosition(movingVertex));
         } else { // Anchor point selection
@@ -150,7 +150,7 @@ bool Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
 void Mesh::handleMouseMoveEvent() {
     m_viewer.callback_mouse_move = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
         if (m_mouseDownBeingRecorded) {
-            if (m_arapPrepared) { // Run ARAP deformation
+            if (m_arapInProgress) { // Run ARAP deformation
                 return computeDeformation(viewer);
             }
 
@@ -165,20 +165,20 @@ void Mesh::handleMouseMoveEvent() {
 void Mesh::handleKeyDownEvent() {
     m_viewer.callback_key_down = [this](igl::opengl::glfw::Viewer& viewer, unsigned char keyPressed, int) -> bool {
         if (keyPressed == 'A') { // Lock user input for ARAP
-            m_arapPrepared = !m_arapPrepared; // Toggle ARAP
+            m_arapInProgress = !m_arapInProgress; // Toggle ARAP
 
             std::vector<int> selectedFaceIds;
             for (const auto& entry : m_anchorSelections) {
                 if (entry.second) {
                     selectedFaceIds.push_back(entry.first);
-                    m_colors.row(entry.first) << !m_arapPrepared, m_arapPrepared, 0; // R = Selection, G = ARAP
+                    m_colors.row(entry.first) << !m_arapInProgress, m_arapInProgress, 0; // R = Selection, G = ARAP
                 }
             }
 
             viewer.data().set_colors(m_colors);
             return true;
         } else if (keyPressed == 'R') { // Reset selections
-            m_arapPrepared = false; // Stop ARAP
+            m_arapInProgress = false; // Stop ARAP
 
             // Remove the selections stored
             m_anchorSelections.clear();
@@ -190,7 +190,7 @@ void Mesh::handleKeyDownEvent() {
             return true;
         }
 
-        m_arapPrepared = false;
+        m_arapInProgress = false;
         return false;
     };
 }

@@ -9,6 +9,8 @@
 
 #include "Eigen.h"
 
+#include "iostream"
+#include <chrono>
 #include <map>
 #include <vector>
 #include <utility>
@@ -21,7 +23,7 @@
 #endif
 
 #define USE_COTANGENT_WEIGHTS 1 // Otherwise, constant weights will be applied
-#define NUM_ITERATIONS 2
+#define NUM_ITERATIONS 4
 
 class Arap {
 public:
@@ -53,7 +55,8 @@ private:
     void updateSystemMatrixOnFixedVertices();
 
     // Solver
-    Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+    Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> solver;
+    // Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
 
     // Functions used during deformation
     std::vector<Eigen::Matrix3d> estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&);

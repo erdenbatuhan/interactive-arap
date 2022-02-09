@@ -182,6 +182,7 @@ std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVe
 
         // S, the covariance matrix
         Eigen::Matrix3d S = P * D * P_prime.transpose();
+        S /= S.array().abs().maxCoeff(); // Normalize
 
         // SVD
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(S, Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -229,6 +230,9 @@ Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices, std::vector<Eigen::M
 Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices) {
     Eigen::MatrixXd deformedVertices = safeReplicate(vertices); // Deformed vertices are stored in a different matrix
 
+    // Start the timer
+    const std::chrono::time_point<std::chrono::system_clock> t0 = std::chrono::system_clock::now();
+
     // Optimize over some iterations
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         // Estimate rotations
@@ -240,7 +244,14 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices) {
         // Solve the system
         solver.compute(m_systemMatrix.sparseView());
         deformedVertices = solver.solve(rhs);
+
+        // Performance analysis for each iteration
+        printf("Iteration %d: # iterations = %ld and estimated error = %e\n", i, solver.iterations(), solver.error());
     }
+
+    // End the timer and print the duration
+    const std::chrono::time_point<std::chrono::system_clock> t1 = std::chrono::system_clock::now();
+    printf("Took %f seconds to deform..\n\n", std::chrono::duration<double>(t1 - t0).count());
 
     return deformedVertices;
 }

@@ -35,10 +35,10 @@ private:
     // Functions used during deformation
     static Eigen::MatrixXd initializeWeightMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&);
     static Eigen::MatrixXd computeSystemMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, Eigen::MatrixXd&);
-    static std::vector<Matrix3d> estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
-                                                   Eigen::MatrixXd&);
+    static std::vector<Eigen::Matrix3d> estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&,
+                                                          std::map<int, std::vector<int>>&,Eigen::MatrixXd&);
     Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, const std::vector<int>&,
-                               Eigen::MatrixXd, std::vector<Matrix3d>) const;
+                               Eigen::MatrixXd, std::vector<Eigen::Matrix3d>) const;
     static void updateSystemMatrixOnFixedVertices(Eigen::MatrixXd&, const std::vector<int>&, Eigen::MatrixXd);
 };
 

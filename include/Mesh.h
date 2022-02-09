@@ -11,6 +11,7 @@
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/unproject_onto_mesh.h>
 
+#include "Eigen.h"
 #include "Arap.h"
 
 #include <map>
@@ -43,7 +44,8 @@ private:
 
     // State variables that is keeping track of the state
     bool m_mouseDownBeingRecorded = false; // True when mouse down event is being recorded
-    bool m_arapInProgress = false; // True when ARAP is running
+    bool m_arapPrepared = false; // True when ARAP is prepared
+    bool m_deformationInProgress = false; // True when ARAP is running
 
     // Returns the mouse position
     Eigen::Vector2f getMousePosition() const;
@@ -55,7 +57,7 @@ private:
     Eigen::Vector3f convertCameraToWorldPosition(int) const;
 
     // Computes the ARAP deformation
-    void computeDeformation(igl::opengl::glfw::Viewer&);
+    bool computeDeformation(igl::opengl::glfw::Viewer&);
 
     // Handles the selection (finds and stores the selected face and the closest vertex to the selection)
     bool handleSelection(igl::opengl::glfw::Viewer&, bool);
@@ -67,5 +69,5 @@ private:
     void handleMouseDownEvent();
 };
 
-#endif //_MESH_H_
+#endif // _MESH_H_
 

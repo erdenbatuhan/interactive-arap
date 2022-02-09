@@ -40,6 +40,10 @@ Eigen::MatrixXd Arap::computeSystemMatrix(Eigen::MatrixXd& vertices, std::map<in
                                           const std::vector<int>& fixedVertices, Eigen::MatrixXd& weightMatrix) {
     Eigen::MatrixXd systemMatrix = Eigen::MatrixXd::Zero(vertices.rows(), vertices.rows());
 
+#ifdef OMP
+    #pragma omp parallel for default(none) \
+            shared(vertices, neighborhood, weightMatrix, systemMatrix)
+#endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
         for (int neighbor : neighborhood[i]) { // Iterate over the neighbors
             systemMatrix(i, i) += weightMatrix(i, neighbor);
@@ -56,11 +60,13 @@ Eigen::MatrixXd Arap::computeSystemMatrix(Eigen::MatrixXd& vertices, std::map<in
     return systemMatrix;
 }
 
-std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd& vertices,
-                                                     std::map<int, std::vector<int>>& neighborhood,
-                                                     Eigen::MatrixXd& weightMatrix) {
-    std::vector<Eigen::Matrix3d> rotationMatrices;
-
+void Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd& vertices,
+                             std::map<int, std::vector<int>>& neighborhood, Eigen::MatrixXd& weightMatrix,
+                             Eigen::Matrix3d* rotationMatrices) {
+#ifdef OMP
+    #pragma omp parallel for default(none) \
+            shared(vertices, neighborhood, weightMatrix, deformedVertices, rotationMatrices)
+#endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
         const long numNeighbors = (long) (neighborhood[i].size());
 
@@ -89,17 +95,19 @@ std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVe
 
         // Add the rotation matrix R to the list
         Eigen::Matrix3d R = V * I * U.transpose(); // or (U * I * V.T).T
-        rotationMatrices.push_back(R);
+        rotationMatrices[i] = R;
     }
-
-    return rotationMatrices;
 }
 
 Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices,
                                  std::map<int, std::vector<int>>& neighborhood, const std::vector<int>& fixedVertices,
-                                 Eigen::MatrixXd weightMatrix, std::vector<Eigen::Matrix3d> rotationMatrices) const {
+                                 Eigen::MatrixXd weightMatrix, Eigen::Matrix3d* rotationMatrices) const {
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(vertices.rows(), 3);
 
+#ifdef OMP
+    #pragma omp parallel for default(none) \
+            shared(vertices, neighborhood, fixedVertices, weightMatrix, rotationMatrices, rhs)
+#endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
         Eigen::Vector3d rhsRow = Eigen::Vector3d(0.0, 0.0, 0.0);
 
@@ -131,12 +139,11 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::Matri
     // Optimize over some iterations
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         // Estimate rotations
-        const std::vector<Eigen::Matrix3d> rotationMatrices = estimateRotations(deformedVertices, vertices,
-                                                                                neighborhood, weightMatrix);
+        Eigen::Matrix3d rotationMatrices[vertices.rows()];
+        estimateRotations(deformedVertices, vertices,neighborhood, weightMatrix, rotationMatrices);
 
         // Compute RHS
-        Eigen::MatrixXd rhs = computeRHS(vertices, neighborhood, fixedVertices,
-                                         weightMatrix, rotationMatrices);
+        Eigen::MatrixXd rhs = computeRHS(vertices, neighborhood, fixedVertices, weightMatrix, rotationMatrices);
 
         // Solve the system
         solver.compute(systemMatrix.sparseView());

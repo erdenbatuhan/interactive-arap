@@ -18,7 +18,6 @@ option(LIBIGL_WITH_OPENGL_GLFW "Use GLFW" ON)
 include(libigl)
 
 # Dependency: ceres
-set(glog_DIR ${LIBRARY_DIR}/glog/lib/cmake/glog CACHE PATH "Path to glog")
 set(Ceres_DIR ${LIBRARY_DIR}/ceres/cmake CACHE PATH "Path to Ceres")
 find_package(Ceres REQUIRED)
 

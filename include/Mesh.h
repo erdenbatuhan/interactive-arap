@@ -43,7 +43,7 @@ private:
     std::map<int, bool> m_anchorSelections; // Selected faces (anchors)
 
     // State variables that is keeping track of the state
-    bool m_mouseDownBeingRecorded = false; // True when mouse down event is being recorded
+    bool m_selectionInProgress = false; // True when selecting points
     bool m_arapInProgress = false; // True when ARAP is running
 
     // Returns the mouse position
@@ -53,7 +53,7 @@ private:
     int findClosestVertexToSelection(int, const Eigen::Vector3f&);
 
     // Converts the camera position of the vertex to a world position
-    Eigen::Vector3f convertCameraToWorldPosition(int) const;
+    Eigen::Vector3f convertCameraToWorldPosition(igl::opengl::glfw::Viewer&, int) const;
 
     // Computes the ARAP deformation
     void computeDeformation(igl::opengl::glfw::Viewer&);

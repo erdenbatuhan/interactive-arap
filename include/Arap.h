@@ -20,11 +20,14 @@ public:
     Arap();
     ~Arap() = default;
 
-    void updateParameters(int, const Eigen::Vector3f&);
+    void updateMovingVertex(int);
+    void updateMovingVertexPosition(const Eigen::Vector3f&);
 
     std::vector<int> collectFixedVertices(Eigen::MatrixXi&, const std::vector<int>&) const;
     Eigen::MatrixXd computeDeformation(Eigen::MatrixXd&, Eigen::MatrixXi&,
                                        std::map<int, std::vector<int>>&, const std::vector<int>&);
+
+    int getMovingVertex() const;
 private:
     // The current moving vertex
     int m_movingVertex{};

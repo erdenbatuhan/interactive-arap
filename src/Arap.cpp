@@ -182,7 +182,6 @@ std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVe
 
         // S, the covariance matrix
         Eigen::Matrix3d S = P * D * P_prime.transpose();
-        S /= S.array().abs().maxCoeff(); // Normalize
 
         // SVD
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(S, Eigen::ComputeThinU | Eigen::ComputeThinV);

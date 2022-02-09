@@ -6,11 +6,23 @@ https://igl.ethz.ch/projects/ARAP/
 
 ### Local Environment Setup
 
-Make sure you have **OpenGL** and **CMake GUI** *(for ease of use)* installed on your system! One of the main dependencies, [libigl](https://libigl.github.io/tutorial/), will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
+#### OpenGL
+
+You need to have **OpenGL** installed on your system to build and run the project.
+
+#### libigl
+
+The library, **[libigl](https://libigl.github.io/tutorial/)**, will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
+
+#### OpenMP (Optional)
+
+If you have **OpenMP** installed on your system, the project will run in parallel.
 
 #### Eigen (Needed only for Ceres as [libigl](https://libigl.github.io/tutorial/) installs its own Eigen distribution)
 
-- Clone Eigen: `git clone git@github.com:libigl/eigen.git eigen`
+- Create a library directory if it has not already been created: `mkdir libs`
+- Switch to library directory: `cd libs`
+- Clone **Eigen**: `git clone git@github.com:libigl/eigen.git eigen`
 - Switch to eigen directory: `cd eigen`
 - Create build directory: `mkdir cmake-build`
 - Switch to this directory: `cd cmake-build`
@@ -25,7 +37,9 @@ Make sure you have **OpenGL** and **CMake GUI** *(for ease of use)* installed on
 
 #### GLOG (Needed only for Ceres)
 
-- Clone GLOG: `git clone https://github.com/google/glog glog`
+- Create a library directory if it has not already been created: `mkdir libs`
+- Switch to library directory: `cd libs`
+- Clone **GLOG**: `git clone https://github.com/google/glog glog`
 - Switch to glog directory: `cd glog`
 - Checkout to stable version: `git checkout v0.5.0`
 - Create build directory: `mkdir cmake-build`
@@ -42,9 +56,9 @@ Make sure you have **OpenGL** and **CMake GUI** *(for ease of use)* installed on
 
 #### Ceres
 
-- Create a library directory: `mkdir libs`
-- Switch to this directory: `cd libs`
-- Clone Ceres: `git clone git@github.com:ceres-solver/ceres-solver.git ceres`
+- Create a library directory if it has not already been created: `mkdir libs`
+- Switch to library directory: `cd libs`
+- Clone **Ceres**: `git clone git@github.com:ceres-solver/ceres-solver.git ceres`
 - Switch to ceres directory: `cd ceres`
 - Checkout to stable version: `git checkout 2.0.0`
 - Create build directory: `mkdir cmake-build`

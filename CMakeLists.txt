@@ -22,6 +22,9 @@ set(glog_DIR ${LIBRARY_DIR}/glog/lib/cmake/glog CACHE PATH "Path to glog")
 set(Ceres_DIR ${LIBRARY_DIR}/ceres/cmake CACHE PATH "Path to Ceres")
 find_package(Ceres REQUIRED)
 
+# Optional dependency: OpenMP
+find_package(OpenMP)
+
 # Set header and source files
 file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h) # Set header files
 file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp) # Set source files
@@ -29,6 +32,16 @@ file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp) # Set source files
 # Add executable and link it to the libraries
 add_executable(${PROJECT_NAME} main.cpp ${SOURCE_FILES} ${HEADER_FILES})
 target_link_libraries(${PROJECT_NAME} PUBLIC igl::core igl::opengl_glfw ceres)
+
+# Set OpenMP compiler flags and linking if it is found
+if(OPENMP_FOUND)
+    message("-- OpenMP found! The project will now run in parallel..")
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
+    target_compile_options(${PROJECT_NAME} PUBLIC ${OpenMP_CXX_FLAGS})
+
+    add_definitions(-DOMP)
+endif()
 
 # Copy resources (models & shaders)
 add_custom_command(TARGET ${PROJECT_NAME}

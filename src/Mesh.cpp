@@ -15,13 +15,6 @@ Mesh::Mesh(const std::string& modelName) {
 
     // Populate neighborhood: Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
     populateNeighborhood();
-
-    // Instantiate ARAP instance
-    arap = new Arap();
-}
-
-Mesh::~Mesh() {
-    delete arap;
 }
 
 void Mesh::populateNeighborhood() {
@@ -91,7 +84,7 @@ bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool togglea
                                  m_vertices, m_faces, faceId, barycentricPosition)) {
         if (m_arapInProgress) { // ARAP
             int movingVertex = findClosestVertexToSelection(faceId, barycentricPosition);
-            arap->updateParameters(movingVertex, convertCameraToWorldPosition(movingVertex));
+            m_arap.updateParameters(movingVertex, convertCameraToWorldPosition(movingVertex));
         } else { // Anchor point selection
             const bool selected = !toggleable || !m_anchorSelections[faceId];
 
@@ -128,7 +121,7 @@ void Mesh::handleMouseReleaseEvent() {
     };
 }
 
-bool Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
+void Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
     // Extract selected faces to a list
     std::vector<int> selectedFaceIds;
     for (auto entry : m_anchorSelections) {
@@ -138,7 +131,7 @@ bool Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
     }
 
     // Compute deformation
-    Eigen::MatrixXd deformedVertices = arap->computeDeformation(m_vertices, m_faces, m_neighborhood, selectedFaceIds);
+    Eigen::MatrixXd deformedVertices = m_arap.computeDeformation(m_vertices, m_faces, m_neighborhood, selectedFaceIds);
     m_vertices = safeReplicate(deformedVertices);
 
     viewer.data().compute_normals();

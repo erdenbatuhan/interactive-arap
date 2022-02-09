@@ -20,7 +20,7 @@
 class Mesh {
 public:
     explicit Mesh(const std::string&);
-    ~Mesh();
+    ~Mesh() = default;
 
     // Launches the GLFW viewer
     void launchViewer();
@@ -33,7 +33,7 @@ private:
     igl::opengl::glfw::Viewer m_viewer{};
 
     // ARAP instance
-    Arap* arap{};
+    Arap m_arap;
 
     // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
     std::map<int, std::vector<int>> m_neighborhood;
@@ -56,7 +56,7 @@ private:
     Eigen::Vector3f convertCameraToWorldPosition(int) const;
 
     // Computes the ARAP deformation
-    bool computeDeformation(igl::opengl::glfw::Viewer&);
+    void computeDeformation(igl::opengl::glfw::Viewer&);
 
     // Handles the selection (finds and stores the selected face and the closest vertex to the selection)
     bool handleSelection(igl::opengl::glfw::Viewer&, bool);

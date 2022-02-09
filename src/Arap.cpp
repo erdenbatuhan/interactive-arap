@@ -157,11 +157,14 @@ void Arap::updateMovingVertex(const int movingVertex, const Eigen::Vector3f& mov
     updateSystemMatrixOnFixedVertices();
 }
 
-void Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd& vertices,
-                             Eigen::Matrix3d* rotationMatrices) {
+std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd& vertices) {
+    std::vector<Eigen::Matrix3d> rotationMatrices;
+    rotationMatrices.reserve(vertices.rows());
+
 #ifdef OMP
     #pragma omp parallel for default(none) \
-            shared(m_neighborhood, m_weightMatrix, vertices, deformedVertices, rotationMatrices)
+            shared(m_neighborhood, m_weightMatrix, vertices, deformedVertices) \
+            reduction(merge: rotationMatrices)
 #endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
         const long numNeighbors = (long) (m_neighborhood[i].size());
@@ -191,11 +194,13 @@ void Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd&
 
         // Add the rotation matrix R to the list
         Eigen::Matrix3d R = V * I * U.transpose(); // or (U * I * V.T).T
-        rotationMatrices[i] = R;
+        rotationMatrices.push_back(R);
     }
+
+    return rotationMatrices;
 }
 
-Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices, Eigen::Matrix3d* rotationMatrices) {
+Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices, std::vector<Eigen::Matrix3d> rotationMatrices) {
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(vertices.rows(), 3);
 
 #ifdef OMP
@@ -229,8 +234,7 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices) {
     // Optimize over some iterations
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         // Estimate rotations
-        Eigen::Matrix3d rotationMatrices[vertices.rows()];
-        estimateRotations(deformedVertices, vertices, rotationMatrices);
+        std::vector<Eigen::Matrix3d> rotationMatrices = estimateRotations(deformedVertices, vertices);
 
         // Compute RHS
         Eigen::MatrixXd rhs = computeRHS(vertices, rotationMatrices);

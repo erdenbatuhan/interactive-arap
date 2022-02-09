@@ -15,6 +15,9 @@
 
 #ifdef OMP
 #include <omp.h>
+
+// User-defined reductions (reference: http://www.archer.ac.uk/training/course-material/2018/07/AdvOpenMP-camb/L09-OpenMP4.pdf)
+#pragma omp declare reduction(merge: std::vector<Eigen::Matrix3d>: omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 #endif
 
 #define USE_COTANGENT_WEIGHTS 0 // Otherwise, constant weights will be applied
@@ -53,8 +56,8 @@ private:
     Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
 
     // Functions used during deformation
-    void estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, Eigen::Matrix3d*);
-    Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, Eigen::Matrix3d*);
+    std::vector<Eigen::Matrix3d> estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&);
+    Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, std::vector<Eigen::Matrix3d>);
 };
 
 #endif // _ARAP_H_

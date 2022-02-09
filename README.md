@@ -8,7 +8,7 @@ https://igl.ethz.ch/projects/ARAP/
 
 Make sure you have **OpenGL** and **CMake GUI** *(for ease of use)* installed on your system! One of the main dependencies, [libigl](https://libigl.github.io/tutorial/), will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
 
-#### Eigen (Needed only for Ceres because libigl installs its own Eigen distribution)
+#### Eigen (Needed only for Ceres as [libigl](https://libigl.github.io/tutorial/) installs its own Eigen distribution)
 
 - Clone Eigen: `git clone git@github.com:libigl/eigen.git eigen`
 - Switch to eigen directory: `cd eigen`

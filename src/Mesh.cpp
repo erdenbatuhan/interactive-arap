@@ -143,15 +143,14 @@ bool Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
 
     viewer.data().compute_normals();
     viewer.data().set_mesh(m_vertices, m_faces);
-
-    return true;
 }
 
 void Mesh::handleMouseMoveEvent() {
     m_viewer.callback_mouse_move = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
         if (m_mouseDownBeingRecorded) {
             if (m_arapInProgress) { // Run ARAP deformation
-                return computeDeformation(viewer);
+                computeDeformation(viewer);
+                return true;
             }
 
             // Selecting anchor points

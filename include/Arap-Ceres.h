@@ -9,17 +9,16 @@
 
 #include "Arap.h"
 
-#ifdef ERROR
-#define _ERROR ERROR
+#ifdef WIN32
+#pragma push_macro("ERROR")
 #undef ERROR
 #endif
 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 
-#ifdef _ERROR
-#define ERROR _ERROR
-#undef _ERROR
+#ifdef WIN32
+#pragma pop_macro("ERROR")
 #endif
 
 class ArapCeres : public Arap

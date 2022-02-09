@@ -17,6 +17,7 @@
 #include <omp.h>
 #endif
 
+#define USE_COTANGENT_WEIGHTS 1 // Otherwise, constant weights will be applied
 #define NUM_ITERATIONS 2
 
 class Arap {
@@ -38,7 +39,7 @@ private:
     Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
 
     // Functions used during deformation
-    static Eigen::MatrixXd initializeWeightMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&);
+    static Eigen::MatrixXd initializeWeightMatrix(Eigen::MatrixXd&, Eigen::MatrixXi&, std::map<int, std::vector<int>>&);
     static Eigen::MatrixXd computeSystemMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
                                                const std::vector<int>&, Eigen::MatrixXd&);
     static void estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, std::map<int, std::vector<int>>&,

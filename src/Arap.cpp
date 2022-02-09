@@ -31,8 +31,61 @@ std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, const std::v
     return fixedVertices;
 }
 
-Eigen::MatrixXd Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, std::map<int, std::vector<int>>& neighborhood) {
+Eigen::MatrixXd Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces,
+                                             std::map<int, std::vector<int>>& neighborhood) {
     Eigen::MatrixXd weightMatrix = Eigen::MatrixXd::Ones(vertices.rows(), vertices.rows());
+
+#if USE_COTANGENT_WEIGHTS
+    std::vector<Eigen::Vector2i> vertexEdges[vertices.rows()];
+
+#ifdef OMP
+    #pragma omp parallel for default(none) \
+            shared(vertices, faces, neighborhood, weightMatrix, vertexEdges)
+#endif
+    for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
+        std::vector<Eigen::Vector2i> edges;
+
+        for (int j = 0; j < faces.rows(); j++) { // Iterate over the faces
+            Eigen::Vector3i face = faces.row(j);
+
+            for (int k = 0; k < 3; k++) { // Iterate over the triangle
+                if (face[k] == i) {
+                    edges.emplace_back(face[(k + 1) % 3], face[(k + 2) % 3]);
+                }
+            }
+        }
+
+        vertexEdges[i] = edges;
+    }
+
+#ifdef OMP
+    #pragma omp parallel for default(none) \
+            shared(vertices, neighborhood, weightMatrix, vertexEdges)
+#endif
+    for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
+        for (int neighbor : neighborhood[i]) { // Iterate over the neighbors
+            double totalAngle = 0.0;
+
+            for (const Eigen::Vector2i& edge : vertexEdges[i]) { // Iterate over the edges
+                double bc = (vertices.row(edge[0]) - vertices.row(edge[1])).norm(); // Norm between B and C
+                double ac = (vertices.row(i) - vertices.row(edge[1])).norm(); // Norm between A and C
+                double ab = (vertices.row(i) - vertices.row(edge[0])).norm(); // Norm between A and B
+
+                // From cosine law
+                double betta = acos(((ab * ab) + (bc * bc) - (ac * ac)) / (2 * ab * bc));
+
+                // Add to total angle if one of the points on the edge is the current neighbor
+                totalAngle += (edge[0] == neighbor) * abs(tan(M_PI_2 - betta));
+                totalAngle += (edge[1] == neighbor) * abs(tan(M_PI_2 - betta));
+            }
+
+            weightMatrix(i, neighbor) = abs(totalAngle) / 2;
+        }
+
+        weightMatrix(i, i) = 1.0; // Override the diagonal entry
+    }
+#endif
+
     return weightMatrix;
 }
 
@@ -135,7 +188,7 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::Matri
 
     std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds); // Collect all fixed vertices in a list
 
-    Eigen::MatrixXd weightMatrix = initializeWeightMatrix(vertices, neighborhood); // Weights
+    Eigen::MatrixXd weightMatrix = initializeWeightMatrix(vertices, faces, neighborhood); // Weights
     Eigen::MatrixXd systemMatrix = computeSystemMatrix(vertices, neighborhood, fixedVertices, weightMatrix); // LHS
 
     // Optimize over some iterations

@@ -6,20 +6,40 @@ https://igl.ethz.ch/projects/ARAP/
 
 ### Local Environment Setup
 
-#### Dependencies
+#### OpenGL
 
-Make sure you have **OpenGL** and **CMake GUI** *(for ease of use)* installed on your system! One of the main dependencies, [libigl](https://libigl.github.io/tutorial/), will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
+You need to have **OpenGL** installed on your system to build and run the project.
 
-#### Prerequisites
+#### libigl
 
-- Create a library directory: `mkdir libs`
-- Switch to this directory: `cd libs`
+The library, **[libigl](https://libigl.github.io/tutorial/)**, will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
 
-Complete the following steps in `libs` directory! Note that normally you would not have to run `make` in the **header-only** libraries, just `make install` would suffice. However, out of completeness, we included both commands in the guidelines below.
+#### OpenMP (Optional)
 
-#### 1) GLOG
+If you have **OpenMP** installed on your system, the project will run in parallel.
 
-- Clone GLOG: `git clone https://github.com/google/glog glog`
+#### Eigen (Needed only for Ceres as [libigl](https://libigl.github.io/tutorial/) installs its own Eigen distribution)
+
+- Create a library directory if it has not already been created: `mkdir libs`
+- Switch to library directory: `cd libs`
+- Clone **Eigen**: `git clone git@github.com:libigl/eigen.git eigen`
+- Switch to eigen directory: `cd eigen`
+- Create build directory: `mkdir cmake-build`
+- Switch to this directory: `cd cmake-build`
+- Set eigen install directory in cmake:
+  - `cmake-gui`
+  - Set source directory to `<path_to_project>/libs/eigen` and build directory to `<path_to_project>/libs/eigen/cmake-build`.
+  - Click "Configure".
+  - Set **CMAKE_INSTALL_PREFIX** to `<path_to_project>/libs/eigen` (If you do not see this entry, check the **Advanced** checkbox at the top right.).
+  - Click "Generate".
+- Then make the Eigen project by running the following commands in `<path_to_project>/libs/eigen/cmake-build`: `make && make install`
+- `<path_to_project>/libs/eigen/` folder should contain both `share` and `include`. If not, it means that the Eigen is installed on the system directly. In that case, you can either try the previous step where you set **CMAKE_INSTALL_PREFIX** or directly copy `share` and `include` to `<path_to_project>/libs/eigen/`.
+
+#### GLOG (Needed only for Ceres)
+
+- Create a library directory if it has not already been created: `mkdir libs`
+- Switch to library directory: `cd libs`
+- Clone **GLOG**: `git clone https://github.com/google/glog glog`
 - Switch to glog directory: `cd glog`
 - Checkout to stable version: `git checkout v0.5.0`
 - Create build directory: `mkdir cmake-build`
@@ -34,9 +54,11 @@ Complete the following steps in `libs` directory! Note that normally you would n
 - Then make the GLOG project by running the following commands in `<path_to_project>/libs/glog/cmake-build`: `make && make install`
 - `<path_to_project>/libs/glog/` folder should contain both `lib` and `include`. If not, use the same tips in Eigen guide.
 
-#### 2) Ceres
+#### Ceres
 
-- Clone Ceres: `git clone git@github.com:ceres-solver/ceres-solver.git ceres`
+- Create a library directory if it has not already been created: `mkdir libs`
+- Switch to library directory: `cd libs`
+- Clone **Ceres**: `git clone git@github.com:ceres-solver/ceres-solver.git ceres`
 - Switch to ceres directory: `cd ceres`
 - Checkout to stable version: `git checkout 2.0.0`
 - Create build directory: `mkdir cmake-build`
@@ -53,11 +75,4 @@ Complete the following steps in `libs` directory! Note that normally you would n
   - Click "Generate".
 - Then make the Ceres project by running the following commands in `<path_to_project>/libs/ceres/cmake-build`: `make && make install`
 - `<path_to_project>/libs/ceres/` folder should contain both `cmake` and `include`. If not, use the same tips in Eigen guide.
-
-#### 3) OpenGL Mathematics (GLM)
-
-- Clone GLM: `git clone git@github.com:g-truc/glm.git glm`
-- Switch to GLM directory: `cd glm`
-- Checkout to stable version: `git checkout 0.9.9.8`
-- You do not need to build this library as it is just an include-only library. Copy the `cd glm` and its contents to `include` folder: `mkdir include && cp -r glm/ include/glm/`
 

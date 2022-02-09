@@ -13,6 +13,8 @@
 #include <igl/opengl/glfw/Viewer.h>
 #include <igl/unproject_onto_mesh.h>
 
+#include "Eigen.h"
+
 #ifdef CERES
 #include "Arap-Ceres.h"
 #else
@@ -22,10 +24,12 @@
 #include <map>
 #include <vector>
 
+#define INVALID_VERTEX -1
+
 class Mesh {
 public:
     explicit Mesh(const std::string&);
-    ~Mesh();
+    ~Mesh() = default;
 
     // Launches the GLFW viewer
     void launchViewer();
@@ -37,19 +41,20 @@ private:
     // GLFW viewer
     igl::opengl::glfw::Viewer m_viewer{};
 
-    // ARAP instances
-    Arap* arap;
+    // ARAP instance
+    Arap m_arap;
 
     // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
     std::map<int, std::vector<int>> m_neighborhood;
     void populateNeighborhood(); // Populates the neighborhood
 
     // Selections stored
+    int m_movingVertex = INVALID_VERTEX; // Selected moving vertex to be used to perform ARAP
     std::map<int, bool> m_anchorSelections; // Selected faces (anchors)
 
     // State variables that is keeping track of the state
-    bool m_mouseDownBeingRecorded = false; // True when mouse down event is being recorded
-    bool m_arapInProgress = false; // True when ARAP is running
+    bool m_selectionHandledOnMesh = false; // If clicked on a point on the mesh
+    bool m_arapInProgress = false; // If ARAP is running
 
     // Returns the mouse position
     Eigen::Vector2f getMousePosition() const;
@@ -58,7 +63,10 @@ private:
     int findClosestVertexToSelection(int, const Eigen::Vector3f&);
 
     // Converts the camera position of the vertex to a world position
-    Eigen::Vector3f convertCameraToWorldPosition(int) const;
+    Eigen::Vector3f convertCameraToWorldPosition(igl::opengl::glfw::Viewer&, int) const;
+
+    // Computes the ARAP deformation
+    void computeDeformation(igl::opengl::glfw::Viewer&);
 
     // Handles the selection (finds and stores the selected face and the closest vertex to the selection)
     bool handleSelection(igl::opengl::glfw::Viewer&, bool);
@@ -70,4 +78,5 @@ private:
     void handleMouseDownEvent();
 };
 
-#endif //_MESH_H_
+#endif // _MESH_H_
+

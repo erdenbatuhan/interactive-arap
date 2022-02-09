@@ -15,13 +15,6 @@ Mesh::Mesh(const std::string& modelName) {
 
     // Populate neighborhood: Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
     populateNeighborhood();
-
-    // Instantiate ARAP instance
-    arap = new Arap();
-}
-
-Mesh::~Mesh() {
-    delete arap;
 }
 
 void Mesh::populateNeighborhood() {
@@ -68,29 +61,24 @@ int Mesh::findClosestVertexToSelection(const int faceId, const Eigen::Vector3f& 
     return m_faces.row(faceId)(maxCoefficient);
 }
 
-Eigen::Vector3f Mesh::convertCameraToWorldPosition(int vertexId) const {
-    Eigen::Vector2f position = getMousePosition();
-
-    Eigen::Vector3f projection = igl::project((Eigen::Vector3f) m_vertices.row(vertexId).cast<float>(),
-                                              m_viewer.core().view, m_viewer.core().proj, m_viewer.core().viewport);
-    Eigen::Vector3f worldPosition = igl::unproject(Eigen::Vector3f(position.x(), position.y(), (float) projection.z()),
-                                                   m_viewer.core().view, m_viewer.core().proj, m_viewer.core().viewport);
-
-    return worldPosition;
-}
-
 bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool toggleable = true) {
     int faceId;
 
     Eigen::Vector2f mousePosition = getMousePosition();
     Eigen::Vector3f barycentricPosition; // P = wA + uB + vC
 
-    if (igl::unproject_onto_mesh(mousePosition, viewer.core().view, viewer.core().proj, viewer.core().viewport,
-                                 m_vertices, m_faces, faceId, barycentricPosition)) {
-        if (m_arapInProgress) { // Running the ARAP
-            int movingVertex = findClosestVertexToSelection(faceId, barycentricPosition);
-            arap->updateParameters(movingVertex);
-        } else { // Anchor point selection
+    if (m_arapInProgress) { // ARAP
+        if (m_movingVertex == INVALID_VERTEX) { // If no moving vertex has been selected yet
+            if (igl::unproject_onto_mesh(mousePosition, viewer.core().view, viewer.core().proj, viewer.core().viewport,
+                                         m_vertices, m_faces, faceId, barycentricPosition)) {
+                // Find the closest vertex to selection
+                m_movingVertex = findClosestVertexToSelection(faceId, barycentricPosition);
+                return true;
+            }
+        }
+    } else { // Anchor point selection
+        if (igl::unproject_onto_mesh(mousePosition, viewer.core().view, viewer.core().proj, viewer.core().viewport,
+                                     m_vertices, m_faces, faceId, barycentricPosition)) {
             const bool selected = !toggleable || !m_anchorSelections[faceId];
 
             // Store the selections
@@ -102,9 +90,8 @@ bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool togglea
 
             // Paint
             viewer.data().set_colors(m_colors);
+            return true;
         }
-
-        return true;
     }
 
     return false;
@@ -112,29 +99,65 @@ bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool togglea
 
 void Mesh::handleMouseDownEvent() {
     m_viewer.callback_mouse_down = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
-        const bool selectionHandled = handleSelection(viewer);
+        const bool selectionHandledOnMesh = handleSelection(viewer);
 
-        m_mouseDownBeingRecorded = selectionHandled;
-        return selectionHandled;
+        m_selectionHandledOnMesh = selectionHandledOnMesh;
+        return selectionHandledOnMesh;
     };
 }
 
 void Mesh::handleMouseReleaseEvent() {
     m_viewer.callback_mouse_up = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
-        m_mouseDownBeingRecorded = false;
+        m_selectionHandledOnMesh = false;
+        m_movingVertex = INVALID_VERTEX; // Reset the selection of moving vertex
+
         return true;
     };
 }
 
+Eigen::Vector3f Mesh::convertCameraToWorldPosition(igl::opengl::glfw::Viewer& viewer, int vertexId) const {
+    Eigen::Vector2f mousePosition = getMousePosition();
+    Eigen::Vector3f vertexPosition = {
+        (float) m_vertices.row(vertexId).x(), (float) m_vertices.row(vertexId).y(), (float) m_vertices.row(vertexId).z()
+    };
+
+    Eigen::Vector3f projection = igl::project(vertexPosition, viewer.core().view, viewer.core().proj, viewer.core().viewport);
+    Eigen::Vector3f worldPosition = igl::unproject(Eigen::Vector3f(mousePosition.x(), mousePosition.y(), projection.z()),
+                                                   viewer.core().view, viewer.core().proj, viewer.core().viewport);
+
+    return worldPosition;
+}
+
+void Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
+    // Extract selected faces to a list
+    std::vector<int> selectedFaceIds;
+    for (auto entry : m_anchorSelections) {
+        if (entry.second) { // If face is selected
+            selectedFaceIds.push_back(entry.first);
+        }
+    }
+
+    // Compute the updated position of moving vertex
+    m_arap.updateMovingVertex(m_movingVertex, convertCameraToWorldPosition(viewer, m_movingVertex));
+
+    // Compute deformation
+    Eigen::MatrixXd deformedVertices = m_arap.computeDeformation(m_vertices, m_faces, m_neighborhood, selectedFaceIds);
+    m_vertices = safeReplicate(deformedVertices);
+
+    viewer.data().compute_normals();
+    viewer.data().set_mesh(m_vertices, m_faces);
+}
+
 void Mesh::handleMouseMoveEvent() {
     m_viewer.callback_mouse_move = [this](igl::opengl::glfw::Viewer& viewer, int, int) -> bool {
-        if (m_mouseDownBeingRecorded) {
-            if (m_arapInProgress) { // Running ARAP
-                return true;
+        if (m_selectionHandledOnMesh) {
+            handleSelection(viewer,  false); // Selecting anchor points
+
+            if (m_arapInProgress) { // ARAP
+                computeDeformation(viewer);
             }
 
-            // Selecting anchor points
-            return handleSelection(viewer, false);
+            return true;
         }
 
         return false;
@@ -143,10 +166,13 @@ void Mesh::handleMouseMoveEvent() {
 
 void Mesh::handleKeyDownEvent() {
     m_viewer.callback_key_down = [this](igl::opengl::glfw::Viewer& viewer, unsigned char keyPressed, int) -> bool {
-        if (keyPressed == 'A') { // ARAP
+        if (keyPressed == 'A') { // Activate ARAP: Locks any user input other than moving vertex selection
             m_arapInProgress = !m_arapInProgress; // Toggle ARAP
 
+            // Collect all selected face ids in a list
             std::vector<int> selectedFaceIds;
+            selectedFaceIds.reserve(m_anchorSelections.size());
+
             for (const auto& entry : m_anchorSelections) {
                 if (entry.second) {
                     selectedFaceIds.push_back(entry.first);
@@ -154,6 +180,7 @@ void Mesh::handleKeyDownEvent() {
                 }
             }
 
+            // Paint
             viewer.data().set_colors(m_colors);
             return true;
         } else if (keyPressed == 'R') { // Reset selections
@@ -188,3 +215,4 @@ void Mesh::launchViewer() {
     // Launch the glfw viewer
     m_viewer.launch();
 }
+

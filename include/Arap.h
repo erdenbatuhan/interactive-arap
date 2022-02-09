@@ -17,35 +17,44 @@
 #include <omp.h>
 #endif
 
-#define USE_COTANGENT_WEIGHTS 1 // Otherwise, constant weights will be applied
+#define USE_COTANGENT_WEIGHTS 0 // Otherwise, constant weights will be applied
 #define NUM_ITERATIONS 2
 
 class Arap {
 public:
-    Arap();
+    Arap(Eigen::MatrixXd&, Eigen::MatrixXi&);
     ~Arap() = default;
 
-    void updateMovingVertex(int, const Eigen::Vector3f&);
-
-    std::vector<int> collectFixedVertices(Eigen::MatrixXi&, const std::vector<int>&) const;
-    Eigen::MatrixXd computeDeformation(Eigen::MatrixXd&, Eigen::MatrixXi&,
-                                       std::map<int, std::vector<int>>&, const std::vector<int>&);
+    void updateMovingVertex(int, const Eigen::Vector3f&, Eigen::MatrixXi&, const std::vector<int>&);
+    Eigen::MatrixXd computeDeformation(Eigen::MatrixXd&);
 private:
-    // The current moving vertex
+    // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
+    std::map<int, std::vector<int>> m_neighborhood;
+    void populateNeighborhood(Eigen::MatrixXd&, Eigen::MatrixXi&);
+
+    // Weight matrix used (Constant or Cotangent)
+    Eigen::MatrixXd m_weightMatrix;
+    void initializeWeightMatrix(Eigen::MatrixXd&, Eigen::MatrixXi&);
+
+    // System matrix
+    Eigen::MatrixXd m_systemMatrix;
+    void computeSystemMatrix(Eigen::MatrixXd&);
+
+    // ARAP variables (the moving vertex and its position)
     int m_movingVertex{};
     Eigen::Vector3d m_movingVertexPosition{};
+
+    // ARAP variables (the fixed vertices - anchor points)
+    std::vector<int> m_fixedVertices;
+    void collectFixedVertices(Eigen::MatrixXi&, const std::vector<int>&);
+    void updateSystemMatrixOnFixedVertices();
 
     // Solver
     Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
 
     // Functions used during deformation
-    static Eigen::MatrixXd initializeWeightMatrix(Eigen::MatrixXd&, Eigen::MatrixXi&, std::map<int, std::vector<int>>&);
-    static Eigen::MatrixXd computeSystemMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
-                                               const std::vector<int>&, Eigen::MatrixXd&);
-    static void estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
-                                  Eigen::MatrixXd&, Eigen::Matrix3d*);
-    Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, const std::vector<int>&,
-                               Eigen::MatrixXd, Eigen::Matrix3d*) const;
+    void estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, Eigen::Matrix3d*);
+    Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, Eigen::Matrix3d*);
 };
 
 #endif // _ARAP_H_

@@ -6,41 +6,19 @@
 
 #include "../include/Arap.h"
 
-Arap::Arap() = default;
-
-void Arap::updateMovingVertex(const int movingVertex, const Eigen::Vector3f& movingVertexPosition) {
-    m_movingVertex = movingVertex;
-    m_movingVertexPosition = movingVertexPosition.cast<double>();
+void Arap::populateNeighborhood(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces) {
+    m_neighborhood.clear();
+    // TODO: Add the neighborhood code after testing it
 }
 
-std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, const std::vector<int>& anchorFaces) const {
-    std::vector<int> fixedVertices;
-
-    // Add the vertices of each face to the fixed vertices
-    for (int anchorFace : anchorFaces) {
-        Eigen::VectorXi faceVertices = faces.row(anchorFace);
-
-        for (int j = 0; j < faces.cols(); j++) {
-            fixedVertices.push_back(faceVertices(j));
-        }
-    }
-
-    // Add the selected vertex to the fixed vertices
-    fixedVertices.push_back(m_movingVertex);
-
-    return fixedVertices;
-}
-
-Eigen::MatrixXd Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces,
-                                             std::map<int, std::vector<int>>& neighborhood) {
-    Eigen::MatrixXd weightMatrix = Eigen::MatrixXd::Ones(vertices.rows(), vertices.rows());
+void Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces) {
+    m_weightMatrix = Eigen::MatrixXd::Ones(vertices.rows(), vertices.rows());
 
 #if USE_COTANGENT_WEIGHTS
     std::vector<Eigen::Vector2i> vertexEdges[vertices.rows()];
 
 #ifdef OMP
-    #pragma omp parallel for default(none) \
-            shared(vertices, faces, neighborhood, weightMatrix, vertexEdges)
+    #pragma omp parallel for default(none) shared(vertices, faces, vertexEdges)
 #endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
         std::vector<Eigen::Vector2i> edges;
@@ -59,11 +37,10 @@ Eigen::MatrixXd Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, Eigen::M
     }
 
 #ifdef OMP
-    #pragma omp parallel for default(none) \
-            shared(vertices, neighborhood, weightMatrix, vertexEdges)
+    #pragma omp parallel for default(none) shared(vertices, vertexEdges)
 #endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
-        for (int neighbor : neighborhood[i]) { // Iterate over the neighbors
+        for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
             double totalAngle = 0.0;
 
             for (const Eigen::Vector2i& edge : vertexEdges[i]) { // Iterate over the edges
@@ -79,49 +56,75 @@ Eigen::MatrixXd Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, Eigen::M
                 totalAngle += (edge[1] == neighbor) * abs(tan(M_PI_2 - betta));
             }
 
-            weightMatrix(i, neighbor) = abs(totalAngle) / 2;
+            m_weightMatrix(i, neighbor) = abs(totalAngle) / 2;
         }
 
-        weightMatrix(i, i) = 1.0; // Override the diagonal entry
+        m_weightMatrix(i, i) = 1.0; // Override the diagonal entry
     }
 #endif
-
-    return weightMatrix;
 }
 
-Eigen::MatrixXd Arap::computeSystemMatrix(Eigen::MatrixXd& vertices, std::map<int, std::vector<int>>& neighborhood,
-                                          const std::vector<int>& fixedVertices, Eigen::MatrixXd& weightMatrix) {
-    Eigen::MatrixXd systemMatrix = Eigen::MatrixXd::Zero(vertices.rows(), vertices.rows());
+void Arap::computeSystemMatrix(Eigen::MatrixXd& vertices) {
+    m_systemMatrix = Eigen::MatrixXd::Zero(vertices.rows(), vertices.rows());
 
 #ifdef OMP
-    #pragma omp parallel for default(none) \
-            shared(vertices, neighborhood, weightMatrix, systemMatrix)
+    #pragma omp parallel for default(none) shared(vertices)
 #endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
-        for (int neighbor : neighborhood[i]) { // Iterate over the neighbors
-            systemMatrix(i, i) += weightMatrix(i, neighbor);
-            systemMatrix(i, neighbor) -= weightMatrix(i, neighbor);
+        for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
+            m_systemMatrix(i, i) += m_weightMatrix(i, neighbor);
+            m_systemMatrix(i, neighbor) -= m_weightMatrix(i, neighbor);
+        }
+    }
+}
+
+Arap::Arap(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces) {
+    populateNeighborhood(vertices, faces); // Neighborhood
+    initializeWeightMatrix(vertices, faces); // Weights
+    computeSystemMatrix(vertices); // LHS
+}
+
+void Arap::collectFixedVertices(Eigen::MatrixXi& faces, const std::vector<int>& anchorFaces) {
+    m_fixedVertices.clear();
+    m_fixedVertices.reserve(anchorFaces.size() * faces.row(0).cols() + 1);
+
+    // Add the vertices of each face to the fixed vertices
+    for (int anchorFace : anchorFaces) {
+        Eigen::VectorXi faceVertices = faces.row(anchorFace);
+
+        for (int j = 0; j < faces.cols(); j++) {
+            m_fixedVertices.push_back(faceVertices(j));
         }
     }
 
-    // Update system matrix on fixed vertices to keep the fixed vertices stay where they are
-    for (int fixedVertex : fixedVertices) { // Iterate over the fixed vertices
-        systemMatrix.row(fixedVertex).setZero();
-        systemMatrix(fixedVertex, fixedVertex) = 1;
-    }
+    // Add the selected vertex to the fixed vertices
+    m_fixedVertices.push_back(m_movingVertex);
+}
 
-    return systemMatrix;
+void Arap::updateSystemMatrixOnFixedVertices() {
+    // Update system matrix on fixed vertices to keep the fixed vertices stay where they are
+    for (int fixedVertex : m_fixedVertices) { // Iterate over the fixed vertices
+        m_systemMatrix.row(fixedVertex).setZero();
+        m_systemMatrix(fixedVertex, fixedVertex) = 1;
+    }
+}
+
+void Arap::updateMovingVertex(const int movingVertex, const Eigen::Vector3f& movingVertexPosition,
+                              Eigen::MatrixXi& faces, const std::vector<int>& anchorFaces) {
+    m_movingVertex = movingVertex;
+    m_movingVertexPosition = movingVertexPosition.cast<double>();
+
+    collectFixedVertices(faces, anchorFaces);
+    updateSystemMatrixOnFixedVertices();
 }
 
 void Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd& vertices,
-                             std::map<int, std::vector<int>>& neighborhood, Eigen::MatrixXd& weightMatrix,
                              Eigen::Matrix3d* rotationMatrices) {
 #ifdef OMP
-    #pragma omp parallel for default(none) \
-            shared(vertices, neighborhood, weightMatrix, deformedVertices, rotationMatrices)
+    #pragma omp parallel for default(none) shared(vertices, deformedVertices, rotationMatrices)
 #endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
-        const long numNeighbors = (long) (neighborhood[i].size());
+        const long numNeighbors = (long) (m_neighborhood[i].size());
 
         // The definitions for the matrices P, D and P_prime can be found in the paper!
         Eigen::MatrixXd P = Eigen::MatrixXd::Zero(3, numNeighbors);
@@ -129,9 +132,9 @@ void Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd&
         Eigen::MatrixXd P_prime = Eigen::MatrixXd::Zero(3, numNeighbors);
 
         for (int j = 0; j < numNeighbors; j++) { // Iterate over the neighbors
-            P.col(j) = vertices.row(i) - vertices.row(neighborhood[i][j]);
-            D(j, j) = weightMatrix(i, neighborhood[i][j]);
-            P_prime.col(j) = deformedVertices.row(i) - deformedVertices.row(neighborhood[i][j]);
+            P.col(j) = vertices.row(i) - vertices.row(m_neighborhood[i][j]);
+            D(j, j) = m_weightMatrix(i, m_neighborhood[i][j]);
+            P_prime.col(j) = deformedVertices.row(i) - deformedVertices.row(m_neighborhood[i][j]);
         }
 
         // S, the covariance matrix
@@ -152,27 +155,24 @@ void Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd&
     }
 }
 
-Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices,
-                                 std::map<int, std::vector<int>>& neighborhood, const std::vector<int>& fixedVertices,
-                                 Eigen::MatrixXd weightMatrix, Eigen::Matrix3d* rotationMatrices) const {
+Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices, Eigen::Matrix3d* rotationMatrices) {
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(vertices.rows(), 3);
 
 #ifdef OMP
-    #pragma omp parallel for default(none) \
-            shared(vertices, neighborhood, fixedVertices, weightMatrix, rotationMatrices, rhs)
+    #pragma omp parallel for default(none) shared(vertices, rotationMatrices, rhs)
 #endif
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
         Eigen::Vector3d rhsRow = Eigen::Vector3d(0.0, 0.0, 0.0);
 
-        if (std::find(fixedVertices.begin(), fixedVertices.end(), i) != fixedVertices.end()) { // Current vertex is a fixed vertex
+        if (std::find(m_fixedVertices.begin(), m_fixedVertices.end(), i) != m_fixedVertices.end()) { // Current vertex is a fixed vertex
             rhsRow = (i != m_movingVertex) ? vertices.row(i) : m_movingVertexPosition; // If the vertex is the moving one, get the new position
         } else { // Current vertex is not a fixed vertex but a to-be-deformed vertex
-            const long numNeighbors = (long) (neighborhood[i].size());
+            const long numNeighbors = (long) (m_neighborhood[i].size());
 
             for (int j = 0; j < numNeighbors; j++) { // Iterate over the neighbors
-                rhsRow += 0.5 * weightMatrix(i, j) *
-                          (vertices.row(i) - vertices.row(neighborhood[i][j])) *
-                          (rotationMatrices[i] + rotationMatrices[neighborhood[i][j]]);
+                rhsRow += 0.5 * m_weightMatrix(i, j) *
+                          (vertices.row(i) - vertices.row(m_neighborhood[i][j])) *
+                          (rotationMatrices[i] + rotationMatrices[m_neighborhood[i][j]]);
             }
         }
 
@@ -182,26 +182,20 @@ Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices,
     return rhs;
 }
 
-Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces,
-                                         std::map<int, std::vector<int>>& neighborhood, const std::vector<int>& anchorFaceIds) {
+Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices) {
     Eigen::MatrixXd deformedVertices = safeReplicate(vertices); // Deformed vertices are stored in a different matrix
-
-    std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds); // Collect all fixed vertices in a list
-
-    Eigen::MatrixXd weightMatrix = initializeWeightMatrix(vertices, faces, neighborhood); // Weights
-    Eigen::MatrixXd systemMatrix = computeSystemMatrix(vertices, neighborhood, fixedVertices, weightMatrix); // LHS
 
     // Optimize over some iterations
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         // Estimate rotations
         Eigen::Matrix3d rotationMatrices[vertices.rows()];
-        estimateRotations(deformedVertices, vertices,neighborhood, weightMatrix, rotationMatrices);
+        estimateRotations(deformedVertices, vertices, rotationMatrices);
 
         // Compute RHS
-        Eigen::MatrixXd rhs = computeRHS(vertices, neighborhood, fixedVertices, weightMatrix, rotationMatrices);
+        Eigen::MatrixXd rhs = computeRHS(vertices, rotationMatrices);
 
         // Solve the system
-        solver.compute(systemMatrix.sparseView());
+        solver.compute(m_systemMatrix.sparseView());
         deformedVertices = solver.solve(rhs);
     }
 

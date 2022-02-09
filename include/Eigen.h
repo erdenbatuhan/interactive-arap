@@ -19,8 +19,36 @@
 
 #define EIGEN_USE_BLAS
 
+namespace Eigen {
+  typedef Eigen::Matrix<double, -1, -1, Eigen::RowMajor> MatrixXd_R;
+};
+
 static inline Eigen::MatrixXd safeReplicate(Eigen::MatrixXd& matrix) {
     Eigen::MatrixXd newMatrix(matrix.rows(), matrix.cols());
+
+    for (unsigned int i = 0; i < matrix.rows(); i++) {
+        for (unsigned int j = 0; j < matrix.cols(); j++) {
+            newMatrix(i, j) = matrix(i, j);
+        }
+    }
+
+    return newMatrix;
+}
+
+static inline Eigen::MatrixXd_R convert(Eigen::MatrixXd& matrix) {
+    Eigen::MatrixXd_R newMatrix(matrix.rows(), matrix.cols());
+
+    for (unsigned int i = 0; i < matrix.rows(); i++) {
+        for (unsigned int j = 0; j < matrix.cols(); j++) {
+            newMatrix(i, j) = matrix(i, j);
+        }
+    }
+
+    return newMatrix;
+}
+
+static inline Eigen::MatrixXd_R safeReplicate(Eigen::MatrixXd_R& matrix) {
+    Eigen::MatrixXd_R newMatrix(matrix.rows(), matrix.cols());
 
     for (unsigned int i = 0; i < matrix.rows(); i++) {
         for (unsigned int j = 0; j < matrix.cols(); j++) {

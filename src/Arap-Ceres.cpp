@@ -130,7 +130,6 @@ std::vector<int> ArapCeres::collectFixedVertices(
     return fixedVertices;
 }
 
-// FIXME: We need the mesh before deformation / before moving anchors
 Eigen::MatrixXd ArapCeres::computeDeformation(
   Eigen::MatrixXd &vertices,
   Eigen::MatrixXi &faces,
@@ -138,25 +137,36 @@ Eigen::MatrixXd ArapCeres::computeDeformation(
   const std::vector<int> &anchorFaceIds
 )
 {
+    Eigen::MatrixXd_R verts = convert(vertices);
+    verts.block<1,3>(m_movingVertex, 0) = m_movingVertexPosition;
+    Eigen::MatrixXd_R dVerts = safeReplicate(verts);
+
     std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds);
 
     ceres::Problem problem;
 
     // Initialize rotation matrix & weights storage
-    std::vector<Eigen::Matrix3d> matrices(vertices.rows());
+    std::vector<Eigen::Matrix3d> matrices(verts.rows());
+
+    int totalWeights = 0;
+    for(int i = 0; i < neighborhood.size(); ++i)
+    {
+      totalWeights += neighborhood[i].size();
+    }
+
     std::vector<double> weights;
+    weights.reserve(totalWeights);
 
     // Create vector of blocks for solver
-    std::vector<std::vector<double *>> blocks(vertices.rows());
+    std::vector<std::vector<double *>> blocks(verts.rows());
 
     // Create blocks & energy terms
-    for (Eigen::Index i = 0; i < vertices.rows(); ++i)
+    for (Eigen::Index i = 0; i < verts.rows(); ++i)
     {
-        auto block = blocks[i];
+        std::vector<double*>& block = blocks[i];
 
-        block.push_back(vertices.row(i).data());
-        // TODO: Replace with vertex of deformed mesh!
-        block.push_back(vertices.row(i).data());
+        block.push_back(verts.row(i).data());
+        block.push_back(dVerts.row(i).data());
 
         // Add rotation
         matrices[i] = Eigen::Matrix3d();
@@ -170,9 +180,8 @@ Eigen::MatrixXd ArapCeres::computeDeformation(
             // TODO: Currently uniform, replace with cotan weight
             weights.push_back(1.0);
             block.push_back(&weights.back());
-            block.push_back(vertices.row(neighbors[j]).data());
-            // TODO: Replace with vertex of deformed mesh!
-            block.push_back(vertices.row(neighbors[j]).data());
+            block.push_back(&verts(neighbors[j], 0));
+            block.push_back(&dVerts(neighbors[j], 0));
         }
 
         // Create dynamic energy function
@@ -183,16 +192,15 @@ Eigen::MatrixXd ArapCeres::computeDeformation(
     }
 
     // Fix all vertices of undeformed mesh
-    for (int i = 0; i < vertices.rows(); ++i)
+    for (int i = 0; i < verts.rows(); ++i)
     {
-        problem.SetParameterBlockConstant(vertices.row(i).data());
+        problem.SetParameterBlockConstant(verts.row(i).data());
     }
 
     // Fix anchor vertices in deformed mesh
     for (int i = 0; i < fixedVertices.size(); ++i)
     {
-        // TODO: Replace with vertex of deformed mesh!
-        problem.SetParameterBlockConstant(vertices.row(i).data());
+        problem.SetParameterBlockConstant(dVerts.row(i).data());
     }
 
     ceres::Solver::Options options;
@@ -207,5 +215,5 @@ Eigen::MatrixXd ArapCeres::computeDeformation(
     ceres::Solve(options, &problem, &summary);
     std::cout << summary.FullReport() << "\n";
 
-    return vertices;
+    return verts;
 }

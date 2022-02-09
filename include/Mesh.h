@@ -7,7 +7,7 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
-#define CERES 0
+#define CERES 1
 
 #include <igl/readOFF.h>
 #include <igl/opengl/glfw/Viewer.h>

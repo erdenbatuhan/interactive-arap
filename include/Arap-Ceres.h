@@ -9,8 +9,18 @@
 
 #include "Arap.h"
 
+#ifdef ERROR
+#define _ERROR ERROR
+#undef ERROR
+#endif
+
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
+
+#ifdef _ERROR
+#define ERROR _ERROR
+#undef _ERROR
+#endif
 
 class ArapCeres : public Arap
 {

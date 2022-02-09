@@ -13,7 +13,7 @@ void Arap::updateParameters(const int movingVertex, const Eigen::Vector3f& movin
     m_movingVertexPosition = movingVertexPosition.cast<double>();
 }
 
-std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, std::vector<int>& anchorFaces) const {
+std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, const std::vector<int>& anchorFaces) const {
     std::vector<int> fixedVertices;
 
     // Add the vertices of each face to the fixed vertices
@@ -37,7 +37,7 @@ Eigen::MatrixXd Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, std::map
 }
 
 Eigen::MatrixXd Arap::computeSystemMatrix(Eigen::MatrixXd& vertices, std::map<int, std::vector<int>>& neighborhood,
-                                          Eigen::MatrixXd& weightMatrix) {
+                                          const std::vector<int>& fixedVertices, Eigen::MatrixXd& weightMatrix) {
     Eigen::MatrixXd systemMatrix = Eigen::MatrixXd::Zero(vertices.rows(), vertices.rows());
 
     for (int i = 0; i < vertices.rows(); i++) { // Iterate over the vertices
@@ -45,6 +45,12 @@ Eigen::MatrixXd Arap::computeSystemMatrix(Eigen::MatrixXd& vertices, std::map<in
             systemMatrix(i, i) += weightMatrix(i, neighbor);
             systemMatrix(i, neighbor) -= weightMatrix(i, neighbor);
         }
+    }
+
+    // Update system matrix on fixed vertices to keep the fixed vertices stay where they are
+    for (auto it = fixedVertices.begin(); it < fixedVertices.end(); it++) { // Iterate over the vertices
+        systemMatrix.row(*it).setZero();
+        systemMatrix(*it, *it) = 1;
     }
 
     return systemMatrix;
@@ -113,22 +119,14 @@ Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices,
     return rhs;
 }
 
-void Arap::updateSystemMatrixOnFixedVertices(Eigen::MatrixXd& vertices, const std::vector<int>& fixedVertices,
-                                             Eigen::MatrixXd systemMatrix) {
-    for (auto it = fixedVertices.begin(); it < fixedVertices.end(); it++) { // Iterate over the vertices
-        systemMatrix.row(*it).setZero();
-        systemMatrix(*it, *it) = 1;
-    }
-}
-
 Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces,
-                                         std::map<int, std::vector<int>>& neighborhood, std::vector<int>& anchorFaceIds) {
+                                         std::map<int, std::vector<int>>& neighborhood, const std::vector<int>& anchorFaceIds) {
     Eigen::MatrixXd deformedVertices = safeReplicate(vertices); // Deformed vertices are stored in a different matrix
 
     std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds); // Collect all fixed vertices in a list
 
     Eigen::MatrixXd weightMatrix = initializeWeightMatrix(vertices, neighborhood); // Weights
-    Eigen::MatrixXd systemMatrix = computeSystemMatrix(vertices, neighborhood, weightMatrix); // LHS
+    Eigen::MatrixXd systemMatrix = computeSystemMatrix(vertices, neighborhood, fixedVertices, weightMatrix); // LHS
 
     // Optimize over some iterations
     for (int i = 0; i < NUM_ITERATIONS; i++) {
@@ -139,9 +137,6 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::Matri
         // Compute RHS
         Eigen::MatrixXd rhs = computeRHS(vertices, neighborhood, fixedVertices,
                                          weightMatrix, rotationMatrices);
-
-        // Update system matrix on fixed vertices to keep the fixed vertices stay where they are
-        updateSystemMatrixOnFixedVertices(vertices, fixedVertices, systemMatrix);
 
         // Solve the system
         solver.compute(systemMatrix.sparseView());

@@ -1,19 +1,25 @@
 /**
  * Project: Interactive ARAP
- * File:    SimpleArap.cpp
+ * File:    Arap-Default.cpp
  * Authors: Batuhan Erden, Cansu Yildirim, Anas Shahzad, Alexander Epple
  */
 
-#include "../include/Arap.h"
+#include "../include/Arap-Default.h"
 
-Arap::Arap() = default;
-
-void Arap::updateMovingVertex(const int movingVertex, const Eigen::Vector3f& movingVertexPosition) {
+void ArapDefault::updateMovingVertex(
+  const int movingVertex,
+  const Eigen::Vector3f& movingVertexPosition
+)
+{
     m_movingVertex = movingVertex;
     m_movingVertexPosition = movingVertexPosition.cast<double>();
 }
 
-std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, const std::vector<int>& anchorFaces) const {
+std::vector<int> ArapDefault::collectFixedVertices(
+  Eigen::MatrixXi& faces,
+  const std::vector<int>& anchorFaces
+) const
+{
     std::vector<int> fixedVertices;
 
     // Add the vertices of each face to the fixed vertices
@@ -31,13 +37,22 @@ std::vector<int> Arap::collectFixedVertices(Eigen::MatrixXi& faces, const std::v
     return fixedVertices;
 }
 
-Eigen::MatrixXd Arap::initializeWeightMatrix(Eigen::MatrixXd& vertices, std::map<int, std::vector<int>>& neighborhood) {
+Eigen::MatrixXd ArapDefault::initializeWeightMatrix(
+  Eigen::MatrixXd& vertices,
+  std::map<int, std::vector<int>>& neighborhood
+)
+{
     Eigen::MatrixXd weightMatrix = Eigen::MatrixXd::Ones(vertices.rows(), vertices.rows());
     return weightMatrix;
 }
 
-Eigen::MatrixXd Arap::computeSystemMatrix(Eigen::MatrixXd& vertices, std::map<int, std::vector<int>>& neighborhood,
-                                          const std::vector<int>& fixedVertices, Eigen::MatrixXd& weightMatrix) {
+Eigen::MatrixXd ArapDefault::computeSystemMatrix(
+  Eigen::MatrixXd& vertices, std::map<int,
+  std::vector<int>>& neighborhood,
+  const std::vector<int>& fixedVertices,
+  Eigen::MatrixXd& weightMatrix
+)
+{
     Eigen::MatrixXd systemMatrix = Eigen::MatrixXd::Zero(vertices.rows(), vertices.rows());
 
 #ifdef OMP
@@ -60,9 +75,14 @@ Eigen::MatrixXd Arap::computeSystemMatrix(Eigen::MatrixXd& vertices, std::map<in
     return systemMatrix;
 }
 
-void Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd& vertices,
-                             std::map<int, std::vector<int>>& neighborhood, Eigen::MatrixXd& weightMatrix,
-                             Eigen::Matrix3d* rotationMatrices) {
+void ArapDefault::estimateRotations(
+  Eigen::MatrixXd& deformedVertices,
+  Eigen::MatrixXd& vertices,
+  std::map<int, std::vector<int>>& neighborhood,
+  Eigen::MatrixXd& weightMatrix,
+  Eigen::Matrix3d* rotationMatrices
+)
+{
 #ifdef OMP
     #pragma omp parallel for default(none) \
             shared(vertices, neighborhood, weightMatrix, deformedVertices, rotationMatrices)
@@ -85,7 +105,7 @@ void Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd&
         Eigen::Matrix3d S = P * D * P_prime.transpose();
 
         // SVD
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(S, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        Eigen::JacobiSVD<Eigen::Matrix3d> svd(S, Eigen::ComputeThinU | Eigen::ComputeThinV);
         const Eigen::Matrix3d& U = svd.matrixU();
         const Eigen::Matrix3d& V = svd.matrixV();
 
@@ -99,9 +119,14 @@ void Arap::estimateRotations(Eigen::MatrixXd& deformedVertices, Eigen::MatrixXd&
     }
 }
 
-Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices,
-                                 std::map<int, std::vector<int>>& neighborhood, const std::vector<int>& fixedVertices,
-                                 Eigen::MatrixXd weightMatrix, Eigen::Matrix3d* rotationMatrices) const {
+Eigen::MatrixXd ArapDefault::computeRHS(
+  Eigen::MatrixXd& vertices,
+  std::map<int, std::vector<int>>& neighborhood,
+  const std::vector<int>& fixedVertices,
+  Eigen::MatrixXd weightMatrix,
+  Eigen::Matrix3d* rotationMatrices
+) const
+{
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(vertices.rows(), 3);
 
 #ifdef OMP
@@ -129,8 +154,13 @@ Eigen::MatrixXd Arap::computeRHS(Eigen::MatrixXd& vertices,
     return rhs;
 }
 
-Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces,
-                                         std::map<int, std::vector<int>>& neighborhood, const std::vector<int>& anchorFaceIds) {
+Eigen::MatrixXd ArapDefault::computeDeformation(
+  Eigen::MatrixXd& vertices,
+  Eigen::MatrixXi& faces,
+  std::map<int, std::vector<int>>& neighborhood,
+  const std::vector<int>& anchorFaceIds
+)
+{
     Eigen::MatrixXd deformedVertices = safeReplicate(vertices); // Deformed vertices are stored in a different matrix
 
     std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds); // Collect all fixed vertices in a list
@@ -141,11 +171,11 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::Matri
     // Optimize over some iterations
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         // Estimate rotations
-        Eigen::Matrix3d rotationMatrices[vertices.rows()];
-        estimateRotations(deformedVertices, vertices,neighborhood, weightMatrix, rotationMatrices);
+        std::vector<Eigen::Matrix3d> rotationMatrices(vertices.rows());
+        estimateRotations(deformedVertices, vertices, neighborhood, weightMatrix, rotationMatrices.data());
 
         // Compute RHS
-        Eigen::MatrixXd rhs = computeRHS(vertices, neighborhood, fixedVertices, weightMatrix, rotationMatrices);
+        Eigen::MatrixXd rhs = computeRHS(vertices, neighborhood, fixedVertices, weightMatrix, rotationMatrices.data());
 
         // Solve the system
         solver.compute(systemMatrix.sparseView());
@@ -154,4 +184,3 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& vertices, Eigen::Matri
 
     return deformedVertices;
 }
-

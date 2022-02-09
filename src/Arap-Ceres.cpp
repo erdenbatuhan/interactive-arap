@@ -9,7 +9,9 @@
 struct ARAPEnergy
 {
     ARAPEnergy(
-        int numNeighbors) : _numNeighbors(numNeighbors)
+        int numNeighbors
+    ) :
+      _numNeighbors(numNeighbors)
     {
     }
 
@@ -25,8 +27,9 @@ struct ARAPEnergy
     //------------------------------------------------
     template <typename T>
     bool operator()(
-        T const *const *parameters,
-        T *residuals) const
+      T const *const *parameters,
+      T *residuals
+    ) const
     {
         const T *pi = parameters[0];
         const T *pi_prime = parameters[1];
@@ -61,7 +64,8 @@ struct ARAPEnergy
     }
 
     static ceres::CostFunction *Create(
-        int numNeighbors)
+      int numNeighbors
+    )
     {
         // TODO: Potentially play with stride for better performance
         auto energy = new ceres::DynamicAutoDiffCostFunction<ARAPEnergy, 4>(new ARAPEnergy(numNeighbors));
@@ -93,19 +97,19 @@ struct ARAPEnergy
     int _numNeighbors;
 };
 
-Arap::Arap() = default;
-
-void Arap::updateMovingVertex(
-    const int movingVertex,
-    const Eigen::Vector3f &movingVertexPosition)
+void ArapCeres::updateMovingVertex(
+  const int movingVertex,
+  const Eigen::Vector3f &movingVertexPosition
+)
 {
     m_movingVertex = movingVertex;
     m_movingVertexPosition = movingVertexPosition.cast<double>();
 }
 
-std::vector<int> Arap::collectFixedVertices(
-    Eigen::MatrixXi &faces,
-    const std::vector<int> &anchorFaces) const
+std::vector<int> ArapCeres::collectFixedVertices(
+  Eigen::MatrixXi &faces,
+  const std::vector<int> &anchorFaces
+) const
 {
     std::vector<int> fixedVertices;
 
@@ -127,11 +131,12 @@ std::vector<int> Arap::collectFixedVertices(
 }
 
 // FIXME: We need the mesh before deformation / before moving anchors
-Eigen::MatrixXd Arap::computeDeformation(
-    Eigen::MatrixXd &vertices,
-    Eigen::MatrixXi &faces,
-    std::map<int, std::vector<int>> &neighborhood,
-    const std::vector<int> &anchorFaceIds) const
+Eigen::MatrixXd ArapCeres::computeDeformation(
+  Eigen::MatrixXd &vertices,
+  Eigen::MatrixXi &faces,
+  std::map<int, std::vector<int>> &neighborhood,
+  const std::vector<int> &anchorFaceIds
+)
 {
     std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds);
 

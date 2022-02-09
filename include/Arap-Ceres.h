@@ -7,31 +7,22 @@
 #ifndef _ARAP_CERES_H_
 #define _ARAP_CERES_H_
 
-#include "Eigen.h"
-
-#include <map>
-#include <vector>
-#include <utility>
+#include "Arap.h"
 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 
-class Arap
+class ArapCeres : public Arap
 {
 public:
-  Arap();
-  ~Arap() = default;
+  ArapCeres() = default;
+  ~ArapCeres() = default;
 
-  void updateMovingVertex(int, const Eigen::Vector3f &);
+  virtual void updateMovingVertex(int, const Eigen::Vector3f &) override;
 
-  std::vector<int> collectFixedVertices(Eigen::MatrixXi &, const std::vector<int> &) const;
-  Eigen::MatrixXd computeDeformation(Eigen::MatrixXd &, Eigen::MatrixXi &,
-                                     std::map<int, std::vector<int>> &, const std::vector<int> &);
-
-private:
-     // The current moving vertex
-    int m_movingVertex{};
-    Eigen::Vector3d m_movingVertexPosition{};
+  virtual std::vector<int> collectFixedVertices(Eigen::MatrixXi &, const std::vector<int> &) const override;
+  virtual Eigen::MatrixXd computeDeformation(Eigen::MatrixXd &, Eigen::MatrixXi &,
+      std::map<int, std::vector<int>> &, const std::vector<int> &) override;
 };
 
 #endif // _ARAP_CERES_H_

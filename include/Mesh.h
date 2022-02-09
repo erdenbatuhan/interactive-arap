@@ -15,11 +15,8 @@
 
 #include "Eigen.h"
 
-#ifdef CERES
 #include "Arap-Ceres.h"
-#else
-#include "Arap.h"
-#endif
+#include "Arap-Default.h"
 
 #include <map>
 #include <vector>
@@ -29,7 +26,7 @@
 class Mesh {
 public:
     explicit Mesh(const std::string&);
-    ~Mesh() = default;
+    ~Mesh();
 
     // Launches the GLFW viewer
     void launchViewer();
@@ -42,7 +39,11 @@ private:
     igl::opengl::glfw::Viewer m_viewer{};
 
     // ARAP instance
-    Arap m_arap;
+#if CERES
+    Arap* m_arap = new ArapCeres();
+#else
+    Arap* m_arap = new ArapDefault();
+#endif
 
     // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
     std::map<int, std::vector<int>> m_neighborhood;

@@ -13,39 +13,22 @@
 #include <vector>
 #include <utility>
 
-#ifdef OMP
-#include <omp.h>
-#endif
-
-#define NUM_ITERATIONS 2
-
-class Arap {
+class Arap
+{
 public:
-    Arap();
-    ~Arap() = default;
+  Arap() = default;
+  ~Arap() = default;
 
-    void updateMovingVertex(int, const Eigen::Vector3f&);
+  virtual void updateMovingVertex(int, const Eigen::Vector3f&) = 0;
 
-    std::vector<int> collectFixedVertices(Eigen::MatrixXi&, const std::vector<int>&) const;
-    Eigen::MatrixXd computeDeformation(Eigen::MatrixXd&, Eigen::MatrixXi&,
-                                       std::map<int, std::vector<int>>&, const std::vector<int>&);
-private:
-    // The current moving vertex
-    int m_movingVertex{};
-    Eigen::Vector3d m_movingVertexPosition{};
+  virtual std::vector<int> collectFixedVertices(Eigen::MatrixXi&, const std::vector<int>&) const = 0;
+  virtual Eigen::MatrixXd computeDeformation(Eigen::MatrixXd&, Eigen::MatrixXi&,
+    std::map<int, std::vector<int>>&, const std::vector<int>&) = 0;
 
-    // Solver
-    Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-
-    // Functions used during deformation
-    static Eigen::MatrixXd initializeWeightMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&);
-    static Eigen::MatrixXd computeSystemMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
-                                               const std::vector<int>&, Eigen::MatrixXd&);
-    static void estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
-                                  Eigen::MatrixXd&, Eigen::Matrix3d*);
-    Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, const std::vector<int>&,
-                               Eigen::MatrixXd, Eigen::Matrix3d*) const;
+protected:
+  // The current moving vertex
+  int m_movingVertex{};
+  Eigen::Vector3d m_movingVertexPosition{};
 };
 
 #endif // _ARAP_H_
-

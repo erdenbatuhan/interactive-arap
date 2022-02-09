@@ -17,6 +17,11 @@ Mesh::Mesh(const std::string& modelName) {
     populateNeighborhood();
 }
 
+Mesh::~Mesh() {
+    delete m_arap;
+    m_arap = NULL;
+}
+
 void Mesh::populateNeighborhood() {
     for (int vertexId = 0; vertexId < m_vertices.rows(); vertexId++) {
         std::vector<int> allNeighbors;
@@ -138,10 +143,10 @@ void Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
     }
 
     // Compute the updated position of moving vertex
-    m_arap.updateMovingVertex(m_movingVertex, convertCameraToWorldPosition(viewer, m_movingVertex));
+    m_arap->updateMovingVertex(m_movingVertex, convertCameraToWorldPosition(viewer, m_movingVertex));
 
     // Compute deformation
-    Eigen::MatrixXd deformedVertices = m_arap.computeDeformation(m_vertices, m_faces, m_neighborhood, selectedFaceIds);
+    Eigen::MatrixXd deformedVertices = m_arap->computeDeformation(m_vertices, m_faces, m_neighborhood, selectedFaceIds);
     m_vertices = safeReplicate(deformedVertices);
 
     viewer.data().compute_normals();

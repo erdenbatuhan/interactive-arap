@@ -171,6 +171,8 @@ void Mesh::handleKeyDownEvent() {
 
             // Collect all selected face ids in a list
             std::vector<int> selectedFaceIds;
+            selectedFaceIds.reserve(m_anchorSelections.size());
+
             for (const auto& entry : m_anchorSelections) {
                 if (entry.second) {
                     selectedFaceIds.push_back(entry.first);

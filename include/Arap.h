@@ -13,7 +13,11 @@
 #include <vector>
 #include <utility>
 
-#define NUM_ITERATIONS 1
+#ifdef OMP
+#include <omp.h>
+#endif
+
+#define NUM_ITERATIONS 2
 
 class Arap {
 public:
@@ -37,10 +41,10 @@ private:
     static Eigen::MatrixXd initializeWeightMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&);
     static Eigen::MatrixXd computeSystemMatrix(Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
                                                const std::vector<int>&, Eigen::MatrixXd&);
-    static std::vector<Eigen::Matrix3d> estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&,
-                                                          std::map<int, std::vector<int>>&, Eigen::MatrixXd&);
+    static void estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&, std::map<int, std::vector<int>>&,
+                                  Eigen::MatrixXd&, Eigen::Matrix3d*);
     Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, std::map<int, std::vector<int>>&, const std::vector<int>&,
-                               Eigen::MatrixXd, std::vector<Eigen::Matrix3d>) const;
+                               Eigen::MatrixXd, Eigen::Matrix3d*) const;
 };
 
 #endif // _ARAP_H_

@@ -184,6 +184,9 @@ void Mesh::launchViewer() {
     m_viewer.data().set_mesh(m_vertices, m_faces);
     m_viewer.data().set_colors(m_colors);
 
+    // Disable wireframe
+    m_viewer.data().show_lines = false;
+
     // Launch the glfw viewer
     m_viewer.launch();
 }

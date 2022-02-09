@@ -25,19 +25,11 @@ void Arap::populateNeighborhood(Eigen::MatrixXd& vertices, Eigen::MatrixXi& face
 
         // Iterate over the edges
         for (int j = 0; j < faces.rows(); j++) { // Iterate over the faces
-            if (faces(j, 0) == i) {
-                allNeighbors.push_back(faces(j, 1));
-                allNeighbors.push_back(faces(j, 2));
-            }
-
-            if (faces(j, 1) == i) {
-                allNeighbors.push_back(faces(j, 0));
-                allNeighbors.push_back(faces(j, 2));
-            }
-
-            if (faces(j, 2) == i) {
-                allNeighbors.push_back(faces(j, 0));
-                allNeighbors.push_back(faces(j, 1));
+            for (int k = 0; k < 3; k++) { // Iterate over the points
+                if (faces(j, k) == i) {
+                    allNeighbors.push_back(faces(j, (k + 1) % 3));
+                    allNeighbors.push_back(faces(j, (k + 2) % 3));
+                }
             }
         }
 
@@ -47,6 +39,9 @@ void Arap::populateNeighborhood(Eigen::MatrixXd& vertices, Eigen::MatrixXi& face
                 distinctNeighbors.push_back(neighbor);
             }
         }
+
+        // Sort the neighbors in ascending order
+        sort(distinctNeighbors.begin(), distinctNeighbors.end());
 
         #pragma omp critical
         m_neighborhood[i] = distinctNeighbors;

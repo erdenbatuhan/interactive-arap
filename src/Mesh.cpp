@@ -118,7 +118,7 @@ void Mesh::handleMouseReleaseEvent() {
 Eigen::Vector3f Mesh::convertCameraToWorldPosition(igl::opengl::glfw::Viewer& viewer, int vertexId) const {
     Eigen::Vector2f mousePosition = getMousePosition();
     Eigen::Vector3f vertexPosition = {
-            (float) m_vertices.row(vertexId).x(), (float) m_vertices.row(vertexId).y(), (float) m_vertices.row(vertexId).z()
+        (float) m_vertices.row(vertexId).x(), (float) m_vertices.row(vertexId).y(), (float) m_vertices.row(vertexId).z()
     };
 
     Eigen::Vector3f projection = igl::project(vertexPosition, viewer.core().view, viewer.core().proj, viewer.core().viewport);
@@ -166,9 +166,10 @@ void Mesh::handleMouseMoveEvent() {
 
 void Mesh::handleKeyDownEvent() {
     m_viewer.callback_key_down = [this](igl::opengl::glfw::Viewer& viewer, unsigned char keyPressed, int) -> bool {
-        if (keyPressed == 'A') { // Lock user input for ARAP
+        if (keyPressed == 'A') { // Activate ARAP: Locks any user input other than moving vertex selection
             m_arapInProgress = !m_arapInProgress; // Toggle ARAP
 
+            // Collect all selected face ids in a list
             std::vector<int> selectedFaceIds;
             for (const auto& entry : m_anchorSelections) {
                 if (entry.second) {
@@ -177,6 +178,7 @@ void Mesh::handleKeyDownEvent() {
                 }
             }
 
+            // Paint
             viewer.data().set_colors(m_colors);
             return true;
         } else if (keyPressed == 'R') { // Reset selections

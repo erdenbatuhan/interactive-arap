@@ -33,17 +33,20 @@ public:
     void updateMovingVertex(int, const Eigen::Vector3f&, Eigen::MatrixXi&, const std::vector<int>&);
     Eigen::MatrixXd computeDeformation(Eigen::MatrixXd&);
 private:
+    // Keep the initial vertices fixed for solving the linear system
+    Eigen::MatrixXd m_undeformedVertices;
+
     // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
     std::map<int, std::vector<int>> m_neighborhood;
-    void populateNeighborhood(Eigen::MatrixXd&, Eigen::MatrixXi&);
+    void populateNeighborhood(Eigen::MatrixXi&);
 
     // Weight matrix used (Constant or Cotangent)
     Eigen::MatrixXd m_weightMatrix;
-    void initializeWeightMatrix(Eigen::MatrixXd&, Eigen::MatrixXi&);
+    void initializeWeightMatrix(Eigen::MatrixXi&);
 
     // System matrix
     Eigen::MatrixXd m_systemMatrix;
-    void computeSystemMatrix(Eigen::MatrixXd&);
+    void computeSystemMatrix();
 
     // ARAP variables (the moving vertex and its position)
     int m_movingVertex{};
@@ -55,12 +58,11 @@ private:
     void updateSystemMatrixOnFixedVertices();
 
     // Solver
-    Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> solver;
-    // Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+    Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> solver; // Another solver: SparseLU
 
     // Functions used during deformation
-    std::vector<Eigen::Matrix3d> estimateRotations(Eigen::MatrixXd&, Eigen::MatrixXd&);
-    Eigen::MatrixXd computeRHS(Eigen::MatrixXd&, std::vector<Eigen::Matrix3d>);
+    std::vector<Eigen::Matrix3d> estimateRotations(Eigen::MatrixXd&);
+    Eigen::MatrixXd computeRHS(std::vector<Eigen::Matrix3d>);
 };
 
 #endif // _ARAP_H_

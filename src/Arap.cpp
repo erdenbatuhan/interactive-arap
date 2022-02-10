@@ -267,8 +267,8 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& currentVertices) {
 
         // Stop early if the solution is good enough
         if (abs(previousRigidityEnergy - rigidityEnergy) < LOWER_ENERGY_THRESHOLD) {
-            i = NUM_ITERATIONS;
             printf("Iteration %d: Energy threshold %f reached! Stopping early..\n", i, LOWER_ENERGY_THRESHOLD);
+            i = NUM_ITERATIONS;
         } else {
             previousRigidityEnergy = rigidityEnergy;
         }

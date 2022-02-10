@@ -17,11 +17,6 @@ option(LIBIGL_WITH_OPENGL "Use OpenGL" ON)
 option(LIBIGL_WITH_OPENGL_GLFW "Use GLFW" ON)
 include(libigl)
 
-# Dependency: ceres
-set(glog_DIR ${LIBRARY_DIR}/glog/lib/cmake/glog CACHE PATH "Path to glog")
-set(Ceres_DIR ${LIBRARY_DIR}/ceres/cmake CACHE PATH "Path to Ceres")
-find_package(Ceres REQUIRED)
-
 # Set header and source files
 file(GLOB HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h) # Set header files
 file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp) # Set source files
@@ -29,6 +24,12 @@ file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp) # Set source files
 # Add executable and link it to the libraries
 add_executable(${PROJECT_NAME} main.cpp ${SOURCE_FILES} ${HEADER_FILES})
 target_link_libraries(${PROJECT_NAME} PUBLIC igl::core igl::opengl_glfw ceres)
+
+# Additional dependency: ceres (Currently not being used!)
+#set(glog_DIR ${LIBRARY_DIR}/glog/lib/cmake/glog CACHE PATH "Path to glog")
+#set(Ceres_DIR ${LIBRARY_DIR}/ceres/cmake CACHE PATH "Path to Ceres")
+#find_package(Ceres REQUIRED)
+#target_link_libraries(${PROJECT_NAME} PUBLIC ceres)
 
 # Optional dependency: OpenMP
 find_package(OpenMP)

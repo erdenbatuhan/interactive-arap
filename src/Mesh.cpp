@@ -14,10 +14,6 @@ Mesh::Mesh(const std::string& modelName) {
     m_colors = Eigen::MatrixXd::Constant(m_faces.rows(), 3, 1);
 }
 
-Mesh::~Mesh() {
-    delete m_arap;
-}
-
 Eigen::Vector2f Mesh::getMousePosition(igl::opengl::glfw::Viewer& viewer) {
     return Eigen::Vector2f { viewer.current_mouse_x, viewer.core().viewport(3) - (float) viewer.current_mouse_y };
 }
@@ -42,7 +38,7 @@ bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool togglea
                 m_movingVertex = findClosestVertexToSelection(faceId, barycentricPosition);
 
                 // Instantiate ARAP
-                m_arap = new Arap(m_vertices, m_faces);
+                m_arap.precomputeDeformation(m_vertices, m_faces);
 
                 return true;
             }
@@ -109,11 +105,11 @@ void Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
     }
 
     // Compute the updated position of moving vertex
-    m_arap->updateMovingVertex(m_movingVertex, convertCameraToWorldPosition(viewer, m_movingVertex),
+    m_arap.updateMovingVertex(m_movingVertex, convertCameraToWorldPosition(viewer, m_movingVertex),
                               m_faces, selectedFaces);
 
     // Compute deformation
-    Eigen::MatrixXd deformedVertices = m_arap->computeDeformation(m_vertices);
+    Eigen::MatrixXd deformedVertices = m_arap.computeDeformation(m_vertices);
     m_vertices = safeReplicate(deformedVertices);
 
     viewer.data().compute_normals();
@@ -125,8 +121,8 @@ void Mesh::handleMouseMoveEvent() {
         if (m_selectionHandledOnMesh) {
             handleSelection(viewer,  false); // Selecting anchor points
 
-            if (m_arap != nullptr && m_arapInProgress) { // Deformation
-                computeDeformation(viewer);
+            if (m_arapInProgress) {
+                computeDeformation(viewer); // Deformation
             }
 
             return true;

@@ -6,13 +6,19 @@
 
 #include "../include/Arap.h"
 
-Arap::Arap(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces) {
-    // Copy the vertices to a new matrix before any deformation operation
-    m_undeformedVertices = safeReplicate(vertices);
+Arap::Arap() {
+#ifdef OMP
+    // Init Eigen in parallel mode
+    Eigen::initParallel();
 
-    populateNeighborhood(faces); // Neighborhood
-    initializeWeightMatrix(faces); // Weights
-    computeSystemMatrix(); // LHS
+    // Determine the number of threads
+    int numThreads;
+    #pragma omp parallel default(none) shared(numThreads)
+    numThreads = omp_get_thread_num();
+
+    // Set number of threads Eigen can use (usually it is better to use half since Eigen uses almost 100% of CPU capacity)
+    Eigen::setNbThreads(numThreads / 2);
+#endif
 }
 
 void Arap::populateNeighborhood(Eigen::MatrixXi& faces) {
@@ -117,6 +123,15 @@ void Arap::computeSystemMatrix() {
             m_systemMatrix(i, neighbor) -= m_weightMatrix(i, neighbor);
         }
     }
+}
+
+void Arap::precomputeDeformation(Eigen::MatrixXd& vertices, Eigen::MatrixXi& faces) {
+    // Copy the vertices to a new matrix before any deformation operation
+    m_undeformedVertices = safeReplicate(vertices);
+
+    populateNeighborhood(faces); // Neighborhood
+    initializeWeightMatrix(faces); // Weights
+    computeSystemMatrix(); // LHS
 }
 
 void Arap::collectFixedVertices(Eigen::MatrixXi& faces, const std::vector<int>& anchorFaces) {

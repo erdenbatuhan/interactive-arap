@@ -22,7 +22,7 @@
 class Mesh {
 public:
     explicit Mesh(const std::string&);
-    ~Mesh();
+    ~Mesh() = default;
 
     // Launches the GLFW viewer
     void launchViewer();
@@ -35,7 +35,7 @@ private:
     igl::opengl::glfw::Viewer m_viewer{};
 
     // ARAP instance
-    Arap* m_arap = nullptr;
+    Arap m_arap;
 
     // Selections stored
     int m_movingVertex = INVALID_VERTEX; // Selected moving vertex to be used to perform ARAP

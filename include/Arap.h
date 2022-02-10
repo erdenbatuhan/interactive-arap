@@ -29,9 +29,10 @@
 
 class Arap {
 public:
-    Arap(Eigen::MatrixXd&, Eigen::MatrixXi&);
+    Arap();
     ~Arap() = default;
 
+    void precomputeDeformation(Eigen::MatrixXd&, Eigen::MatrixXi&);
     void updateMovingVertex(int, const Eigen::Vector3f&, Eigen::MatrixXi&, const std::vector<int>&);
     Eigen::MatrixXd computeDeformation(Eigen::MatrixXd&);
 private:

@@ -58,7 +58,7 @@ private:
     void updateSystemMatrixOnFixedVertices();
 
     // Solver
-    Eigen::BiCGSTAB<Eigen::SparseMatrix<double>> solver; // Another solver: SparseLU
+    Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
 
     // Functions used during deformation
     std::vector<Eigen::Matrix3d> estimateRotations(Eigen::MatrixXd&);

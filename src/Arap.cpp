@@ -244,12 +244,12 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& currentVertices) {
         deformedVertices = solver.solve(rhs);
 
         // Performance analysis for each iteration
-        printf("Iteration %d: # iterations = %ld and estimated error = %e\n", i, solver.iterations(), solver.error());
+        //printf("Iteration %d: # iterations = %ld and estimated error = %e\n", i, solver.iterations(), solver.error());
     }
 
     // End the timer and print the duration
     const std::chrono::time_point<std::chrono::system_clock> t1 = std::chrono::system_clock::now();
-    printf("Took %f seconds to deform..\n\n", std::chrono::duration<double>(t1 - t0).count());
+    printf("Took %f seconds to deform..\n", std::chrono::duration<double>(t1 - t0).count());
 
     return deformedVertices;
 }

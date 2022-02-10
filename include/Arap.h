@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <cfloat>
 
 #ifdef OMP
 #include <omp.h>
@@ -24,6 +25,7 @@
 
 #define USE_COTANGENT_WEIGHTS 1 // Otherwise, constant weights will be applied
 #define NUM_ITERATIONS 4
+#define LOWER_ENERGY_THRESHOLD 0.1
 
 class Arap {
 public:
@@ -63,6 +65,9 @@ private:
     // Functions used during deformation
     std::vector<Eigen::Matrix3d> estimateRotations(Eigen::MatrixXd&);
     Eigen::MatrixXd computeRHS(std::vector<Eigen::Matrix3d>);
+
+    // Rigidity Energy
+    double computeRigidityEnergy(Eigen::MatrixXd&, std::vector<Eigen::Matrix3d>);
 };
 
 #endif // _ARAP_H_

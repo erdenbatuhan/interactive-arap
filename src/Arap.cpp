@@ -224,6 +224,25 @@ Eigen::MatrixXd Arap::computeRHS(std::vector<Eigen::Matrix3d> rotationMatrices) 
     return rhs;
 }
 
+double Arap::computeRigidityEnergy(Eigen::MatrixXd& deformedVertices, std::vector<Eigen::Matrix3d> rotationMatrices) {
+    double rigidityEnergy = 0.0;  // rigidity energy
+
+    for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the undeformed vertices
+        double rigidityEnergyPerCell = 0.0;  // energy per cell
+
+        for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
+            Eigen::Vector3d deformedPositionsDiff = deformedVertices.row(i) - deformedVertices.row(neighbor);
+            Eigen::Vector3d undeformedPositionsDiff  = m_undeformedVertices.row(i) - m_undeformedVertices.row(neighbor);
+
+            rigidityEnergyPerCell += m_weightMatrix(i, neighbor) * (deformedPositionsDiff - rotationMatrices[i] * undeformedPositionsDiff).squaredNorm();
+        }
+
+        rigidityEnergy += m_weightMatrix(i,i) * rigidityEnergyPerCell;
+    }
+
+    return rigidityEnergy;
+}
+
 Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& currentVertices) {
     // Vertices before this deformation are copied into a new matrix, deformed vertices, which will be updated with deformation
     Eigen::MatrixXd deformedVertices = safeReplicate(currentVertices);
@@ -232,6 +251,7 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& currentVertices) {
     const std::chrono::time_point<std::chrono::system_clock> t0 = std::chrono::system_clock::now();
 
     // Optimize over some iterations
+    auto previousRigidityEnergy = DBL_MAX;
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         // Estimate rotations
         std::vector<Eigen::Matrix3d> rotationMatrices = estimateRotations(deformedVertices);
@@ -244,12 +264,19 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& currentVertices) {
         deformedVertices = solver.solve(rhs);
 
         // Performance analysis for each iteration
-        //printf("Iteration %d: # iterations = %ld and estimated error = %e\n", i, solver.iterations(), solver.error());
+        const double rigidityEnergy = computeRigidityEnergy(deformedVertices, rotationMatrices);
+        printf("Iteration %d: rigidity energy = %e\n", i, rigidityEnergy);
+
+        // Stop early if the solution is good enough
+        if (abs(previousRigidityEnergy - rigidityEnergy) < LOWER_ENERGY_THRESHOLD) {
+            i = NUM_ITERATIONS;
+            printf("Iteration %d: Energy threshold %f reached! Stopping early..\n", i, LOWER_ENERGY_THRESHOLD);
+        }
     }
 
     // End the timer and print the duration
     const std::chrono::time_point<std::chrono::system_clock> t1 = std::chrono::system_clock::now();
-    printf("Took %f seconds to deform..\n", std::chrono::duration<double>(t1 - t0).count());
+    printf("Took %f seconds to deform..\n\n", std::chrono::duration<double>(t1 - t0).count());
 
     return deformedVertices;
 }

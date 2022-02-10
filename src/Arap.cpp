@@ -43,18 +43,16 @@ void Arap::populateNeighborhood(Eigen::MatrixXi& faces) {
             }
         }
 
-        // Sort the neighbors in ascending order
-        sort(distinctNeighbors.begin(), distinctNeighbors.end());
-
         #pragma omp critical
         m_neighborhood[i] = distinctNeighbors;
     }
 }
 
 void Arap::initializeWeightMatrix(Eigen::MatrixXi& faces) {
+#if not USE_COTANGENT_WEIGHTS // Constant weights
     m_weightMatrix = Eigen::MatrixXd::Ones(m_undeformedVertices.rows(), m_undeformedVertices.rows());
-
-#if USE_COTANGENT_WEIGHTS
+#else // Cotangent weights
+    m_weightMatrix = Eigen::MatrixXd::Zero(m_undeformedVertices.rows(), m_undeformedVertices.rows());
     std::vector<Eigen::Vector2i> vertexEdges[m_undeformedVertices.rows()];
 
 #ifdef OMP

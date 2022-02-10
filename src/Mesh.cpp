@@ -12,6 +12,9 @@ Mesh::Mesh(const std::string& modelName) {
 
     // Initialize white colors
     m_colors = Eigen::MatrixXd::Constant(m_faces.rows(), 3, 1);
+
+    // Instantiate ARAP
+    m_arap = new Arap(m_vertices, m_faces);
 }
 
 Mesh::~Mesh() {
@@ -40,9 +43,6 @@ bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool togglea
                                          m_vertices, m_faces, faceId, barycentricPosition)) {
                 // Find the closest vertex to selection
                 m_movingVertex = findClosestVertexToSelection(faceId, barycentricPosition);
-
-                // Instantiate ARAP
-                m_arap = new Arap(m_vertices, m_faces);
 
                 return true;
             }
@@ -125,7 +125,7 @@ void Mesh::handleMouseMoveEvent() {
         if (m_selectionHandledOnMesh) {
             handleSelection(viewer,  false); // Selecting anchor points
 
-            if (m_arap != nullptr && m_arapInProgress) { // ARAP
+            if (m_arap != nullptr && m_arapInProgress) { // Deformation
                 computeDeformation(viewer);
             }
 

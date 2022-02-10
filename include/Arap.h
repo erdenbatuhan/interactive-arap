@@ -24,8 +24,9 @@
 #endif
 
 #define USE_COTANGENT_WEIGHTS 0 // Otherwise, constant weights will be applied
-#define NUM_ITERATIONS 4
-#define LOWER_ENERGY_THRESHOLD 1e-4
+#define MIN_NUM_ITERATIONS 4
+#define MAX_NUM_ITERATIONS 10
+#define LOWER_ENERGY_THRESHOLD 8e-1
 
 class Arap {
 public:

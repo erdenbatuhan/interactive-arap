@@ -204,7 +204,7 @@ std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVe
         I(2, 2) = (U * V.transpose()).determinant();
 
         // Add the rotation matrix R to the list
-        Eigen::Matrix3d R = V * I * U.transpose(); // or (U * I * V.T).T
+        Eigen::Matrix3d R = U * I * V.transpose();
         rotationMatrices.push_back(R);
     }
 
@@ -273,7 +273,7 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& currentVertices) {
 
     // Optimize over some iterations
     auto previousRigidityEnergy = DBL_MAX;
-    for (int i = 0; i < NUM_ITERATIONS; i++) {
+    for (int i = 0; i < MAX_NUM_ITERATIONS; i++) {
         // Estimate rotations
         std::vector<Eigen::Matrix3d> rotationMatrices = estimateRotations(deformedVertices);
 
@@ -289,9 +289,9 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& currentVertices) {
         printf("Iteration %d: rigidity energy = %.4f\n", i, rigidityEnergy);
 
         // Stop early if the solution is good enough
-        if (abs(previousRigidityEnergy - rigidityEnergy) < LOWER_ENERGY_THRESHOLD) {
+        if (i >= MIN_NUM_ITERATIONS && abs(previousRigidityEnergy - rigidityEnergy) < LOWER_ENERGY_THRESHOLD) {
             printf("Iteration %d: Energy threshold %.4f reached! Stopping early..\n", i, LOWER_ENERGY_THRESHOLD);
-            i = NUM_ITERATIONS;
+            i = MAX_NUM_ITERATIONS;
         } else {
             previousRigidityEnergy = rigidityEnergy;
         }

@@ -31,6 +31,8 @@ struct ARAPEnergy
       T *residuals
     ) const
     {
+        residuals[0] = T(0.0);
+
         const T *pi = parameters[0];
         const T *pi_prime = parameters[1];
         const T *rotation = parameters[2];
@@ -54,10 +56,9 @@ struct ARAPEnergy
             ceres::QuaternionRotatePoint(quat, eij, eij_rot);
 
             // Subtract new - rotated
-            T res[3] = {eij_prime[0] - eij_rot[0], eij_prime[1] - eij_rot[1], eij_prime[2] - eij_rot[2]};
-
-            // Compute weighted residual
-            residuals[0] += weight * ceres::sqrt(ceres::DotProduct(res, res));
+            residuals[0] += weight * (eij_prime[0] - eij_rot[0]);
+            residuals[1] += weight * (eij_prime[1] - eij_rot[1]);
+            residuals[2] += weight * (eij_prime[2] - eij_rot[2]);
         }
 
         return true;
@@ -89,7 +90,7 @@ struct ARAPEnergy
         }
 
         // Only one output: cell energy
-        energy->SetNumResiduals(1);
+        energy->SetNumResiduals(3);
 
         return energy;
     }
@@ -137,25 +138,24 @@ Eigen::MatrixXd ArapCeres::computeDeformation(
   const std::vector<int> &anchorFaceIds
 )
 {
-    Eigen::MatrixXd_R verts = convert(vertices);
-    verts.block<1,3>(m_movingVertex, 0) = m_movingVertexPosition;
-    Eigen::MatrixXd_R dVerts = safeReplicate(verts);
-
-    std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds);
-
     ceres::Problem problem;
 
-    // Initialize rotation matrix & weights storage
-    std::vector<Eigen::Matrix3d> matrices(verts.rows());
+    Eigen::MatrixXd_R verts = convert(vertices);
+    Eigen::MatrixXd_R dVerts = safeReplicate(verts);
+    dVerts.block<1,3>(m_movingVertex, 0) = m_movingVertexPosition;
+    std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds);
 
+    // Initialize weights
     int totalWeights = 0;
+    std::vector<double> weights;
     for(int i = 0; i < neighborhood.size(); ++i)
     {
       totalWeights += neighborhood[i].size();
     }
-
-    std::vector<double> weights;
     weights.reserve(totalWeights);
+
+    // Guess initial rotations & store them
+    std::vector<Eigen::Matrix3d> matrices(verts.rows());
 
     // Create vector of blocks for solver
     std::vector<std::vector<double *>> blocks(verts.rows());
@@ -188,7 +188,7 @@ Eigen::MatrixXd ArapCeres::computeDeformation(
         ceres::CostFunction *energy = ARAPEnergy::Create(neighbors.size());
 
         // Add block
-        problem.AddResidualBlock(energy, NULL, blocks[i]);
+        auto bl = problem.AddResidualBlock(energy, NULL, blocks[i]);
     }
 
     // Fix all vertices of undeformed mesh
@@ -207,13 +207,13 @@ Eigen::MatrixXd ArapCeres::computeDeformation(
     options.minimizer_progress_to_stdout = true;
     // TODO: Play with these for best perfomance / quality
     options.linear_solver_type = ceres::SPARSE_SCHUR;
-    options.max_num_iterations = 50;
-    options.parameter_tolerance = 1e-8;
+    options.max_num_iterations = 10;
+    options.parameter_tolerance = 1e-4;
     options.num_threads = 8;
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     std::cout << summary.FullReport() << "\n";
 
-    return verts;
+    return dVerts;
 }

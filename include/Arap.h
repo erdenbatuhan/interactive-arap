@@ -23,7 +23,7 @@
 #pragma omp declare reduction(merge: std::vector<Eigen::Matrix3d>: omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 #endif
 
-#define USE_COTANGENT_WEIGHTS 1 // Otherwise, constant weights will be applied
+#define USE_COTANGENT_WEIGHTS 0 // Otherwise, constant weights will be applied
 #define NUM_ITERATIONS 4
 #define LOWER_ENERGY_THRESHOLD 1e-5
 

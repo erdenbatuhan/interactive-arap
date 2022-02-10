@@ -285,11 +285,11 @@ Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& currentVertices) {
 
         // Performance analysis for each iteration
         const double rigidityEnergy = computeRigidityEnergy(deformedVertices, rotationMatrices);
-        printf("Iteration %d: rigidity energy = %.2f\n", i, rigidityEnergy);
+        printf("Iteration %d: rigidity energy = %.4f\n", i, rigidityEnergy);
 
         // Stop early if the solution is good enough
         if (abs(previousRigidityEnergy - rigidityEnergy) < LOWER_ENERGY_THRESHOLD) {
-            printf("Iteration %d: Energy threshold %.2f reached! Stopping early..\n", i, LOWER_ENERGY_THRESHOLD);
+            printf("Iteration %d: Energy threshold %.4f reached! Stopping early..\n", i, LOWER_ENERGY_THRESHOLD);
             i = NUM_ITERATIONS;
         } else {
             previousRigidityEnergy = rigidityEnergy;

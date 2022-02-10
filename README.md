@@ -12,17 +12,11 @@ _You can find more pictures of the results [here](https://github.com/erdenbatuha
 
 You can easily download and run the project without installing a lot of libraries. Please use the following instructions to do so.
 
-##### OpenGL
+- You need to have **OpenGL** installed on your system to build and run the project.
 
-You need to have **OpenGL** installed on your system to build and run the project.
+- The library, **[libigl](https://libigl.github.io/tutorial/)**, will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
 
-##### libigl
-
-The library, **[libigl](https://libigl.github.io/tutorial/)**, will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
-
-##### OpenMP (Optional)
-
-If you have **OpenMP** installed on your system, the project will run in parallel.
+- *(Optional)* If you have **OpenMP** installed on your system, the project will run in parallel.
 
 ### Contributors
 

@@ -1,6 +1,4 @@
-# Interactive ARAP
-
-## As-Rigid-As-Possible Surface Modeling
+# Interactive ARAP: As-Rigid-As-Possible Surface Modeling
 
 ***As-rigid-as-possible surface deformation* (ARAP)** is *an iterative mesh processing scheme* in which *the shape is stretched or sheared* while *the small parts of the object are preserved locally*, i.e., small parts are modified to be ***as rigid as possible***. In our work, we implement this **ARAP** deformation algorithm by referring to the work of Sorkine et al [[_1_]](https://igl.ethz.ch/projects/ARAP/arap_web.pdf). Our motivation for choosing this topic was that it is interactive and independent of additional hardware. In the [***report***](https://github.com/erdenbatuhan/interactive-arap/blob/master/doc/report.pdf), we review related work, the methods used for the algorithm, our results, and the conclusion, which includes the challenges we encountered, and our future work.
 
@@ -14,15 +12,15 @@ _You can find more pictures of the results [here](https://github.com/erdenbatuha
 
 You can easily download and run the project without installing a lot of libraries. Please use the following instructions to do so.
 
-#### OpenGL
+##### OpenGL
 
 You need to have **OpenGL** installed on your system to build and run the project.
 
-#### libigl
+##### libigl
 
 The library, **[libigl](https://libigl.github.io/tutorial/)**, will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
 
-#### OpenMP (Optional)
+##### OpenMP (Optional)
 
 If you have **OpenMP** installed on your system, the project will run in parallel.
 

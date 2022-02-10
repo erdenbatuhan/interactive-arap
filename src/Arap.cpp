@@ -225,10 +225,10 @@ Eigen::MatrixXd Arap::computeRHS(std::vector<Eigen::Matrix3d> rotationMatrices) 
 }
 
 double Arap::computeRigidityEnergy(Eigen::MatrixXd& deformedVertices, std::vector<Eigen::Matrix3d> rotationMatrices) {
-    double rigidityEnergy = 0.0;  // rigidity energy
+    double rigidityEnergy = 0.0; // rigidity energy
 
     for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the undeformed vertices
-        double rigidityEnergyPerCell = 0.0;  // energy per cell
+        double rigidityEnergyPerCell = 0.0; // energy per cell
 
         for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
             Eigen::Vector3d deformedPositionsDiff = deformedVertices.row(i) - deformedVertices.row(neighbor);

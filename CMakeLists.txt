@@ -23,7 +23,7 @@ file(GLOB SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp) # Set source files
 
 # Add executable and link it to the libraries
 add_executable(${PROJECT_NAME} main.cpp ${SOURCE_FILES} ${HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} PUBLIC igl::core igl::opengl_glfw ceres)
+target_link_libraries(${PROJECT_NAME} PUBLIC igl::core igl::opengl_glfw)
 
 # Additional dependency: ceres (Currently not being used!)
 #set(glog_DIR ${LIBRARY_DIR}/glog/lib/cmake/glog CACHE PATH "Path to glog")

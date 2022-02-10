@@ -46,7 +46,7 @@ private:
     bool m_arapInProgress = false; // If ARAP is running
 
     // Returns the mouse position
-    Eigen::Vector2f getMousePosition() const;
+    static Eigen::Vector2f getMousePosition(igl::opengl::glfw::Viewer&);
 
     // Finds the closest vertex index to a selected face
     int findClosestVertexToSelection(int, const Eigen::Vector3f&);

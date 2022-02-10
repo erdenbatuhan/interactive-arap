@@ -18,8 +18,8 @@ Mesh::~Mesh() {
     delete m_arap;
 }
 
-Eigen::Vector2f Mesh::getMousePosition() const {
-    return Eigen::Vector2f { m_viewer.current_mouse_x, m_viewer.core().viewport(3) - (float) m_viewer.current_mouse_y };
+Eigen::Vector2f Mesh::getMousePosition(igl::opengl::glfw::Viewer& viewer) {
+    return Eigen::Vector2f { viewer.current_mouse_x, viewer.core().viewport(3) - (float) viewer.current_mouse_y };
 }
 
 int Mesh::findClosestVertexToSelection(const int faceId, const Eigen::Vector3f& barycentricPosition) {
@@ -31,7 +31,7 @@ int Mesh::findClosestVertexToSelection(const int faceId, const Eigen::Vector3f& 
 bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool toggleable = true) {
     int faceId;
 
-    Eigen::Vector2f mousePosition = getMousePosition();
+    Eigen::Vector2f mousePosition = getMousePosition(viewer);
     Eigen::Vector3f barycentricPosition; // P = wA + uB + vC
 
     if (m_arapInProgress) { // ARAP
@@ -87,7 +87,7 @@ void Mesh::handleMouseReleaseEvent() {
 }
 
 Eigen::Vector3f Mesh::convertCameraToWorldPosition(igl::opengl::glfw::Viewer& viewer, int vertexId) const {
-    Eigen::Vector2f mousePosition = getMousePosition();
+    Eigen::Vector2f mousePosition = getMousePosition(viewer);
     Eigen::Vector3f vertexPosition = {
         (float) m_vertices.row(vertexId).x(), (float) m_vertices.row(vertexId).y(), (float) m_vertices.row(vertexId).z()
     };

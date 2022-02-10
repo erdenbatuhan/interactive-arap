@@ -206,8 +206,10 @@ Eigen::MatrixXd Arap::computeRHS(std::vector<Eigen::Matrix3d> rotationMatrices) 
     for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the vertices
         Eigen::Vector3d rhsRow = Eigen::Vector3d(0.0, 0.0, 0.0);
 
-        if (std::find(m_fixedVertices.begin(), m_fixedVertices.end(), i) != m_fixedVertices.end()) { // Current vertex is a fixed vertex
-            rhsRow = (i != m_movingVertex) ? m_undeformedVertices.row(i) : m_movingVertexPosition; // If the vertex is the moving one, get the new position
+        if (i == m_movingVertex) { // If the vertex is the moving one, get the new position
+            rhsRow = m_movingVertexPosition;
+        } else if (std::find(m_fixedVertices.begin(), m_fixedVertices.end(), i) != m_fixedVertices.end()) { // Current vertex is a fixed vertex
+            rhsRow = m_undeformedVertices.row(i);
         } else { // Current vertex is not a fixed vertex but a to-be-deformed vertex
             for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
                 rhsRow += 0.5 * m_weightMatrix(i, neighbor) *

@@ -125,7 +125,7 @@ void Mesh::handleMouseMoveEvent() {
         if (m_selectionHandledOnMesh) {
             handleSelection(viewer,  false); // Selecting anchor points
 
-            if (m_arap != nullptr && m_arapInProgress) { // ARAP
+            if (m_arap != nullptr && m_arapInProgress) { // Deformation
                 computeDeformation(viewer);
             }
 

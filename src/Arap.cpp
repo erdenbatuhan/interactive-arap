@@ -257,15 +257,16 @@ double Arap::computeRigidityEnergy(Eigen::MatrixXd& deformedVertices, std::vecto
             rigidityEnergyPerCell += m_weightMatrix(i, neighbor) * (deformedPositionsDiff - rotationMatrices[i] * undeformedPositionsDiff).squaredNorm();
         }
 
-        rigidityEnergy += m_weightMatrix(i,i) * rigidityEnergyPerCell;
+        rigidityEnergy += m_weightMatrix(i, i) * rigidityEnergyPerCell;
     }
 
     return rigidityEnergy;
 }
 
 Eigen::MatrixXd Arap::computeDeformation(Eigen::MatrixXd& currentVertices) {
-    // Vertices before this deformation are copied into a new matrix, deformed vertices, which will be updated with deformation
-    Eigen::MatrixXd deformedVertices = safeReplicate(currentVertices);
+    // Initial guess
+    solver.compute(m_systemMatrix.sparseView());
+    Eigen::MatrixXd deformedVertices = solver.solve(m_systemMatrix * currentVertices);
 
     // Start the timer
     const std::chrono::time_point<std::chrono::system_clock> t0 = std::chrono::system_clock::now();

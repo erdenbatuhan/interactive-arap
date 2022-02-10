@@ -12,47 +12,14 @@ Mesh::Mesh(const std::string& modelName) {
 
     // Initialize white colors
     m_colors = Eigen::MatrixXd::Constant(m_faces.rows(), 3, 1);
-
-    // Populate neighborhood: Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
-    populateNeighborhood();
 }
 
-void Mesh::populateNeighborhood() {
-    for (int vertexId = 0; vertexId < m_vertices.rows(); vertexId++) {
-        std::vector<int> allNeighbors;
-        std::vector<int> distinctNeighbors;
-
-        // Iterate over the edges
-        for (int faceId = 0; faceId < m_faces.rows(); faceId++) {
-            if (m_faces(faceId, 0) == vertexId) {
-                allNeighbors.push_back(m_faces(faceId, 1));
-                allNeighbors.push_back(m_faces(faceId, 2));
-            }
-
-            if (m_faces(faceId, 1) == vertexId) {
-                allNeighbors.push_back(m_faces(faceId, 0));
-                allNeighbors.push_back(m_faces(faceId, 2));
-            }
-
-            if (m_faces(faceId, 2) == vertexId) {
-                allNeighbors.push_back(m_faces(faceId, 0));
-                allNeighbors.push_back(m_faces(faceId, 1));
-            }
-        }
-
-        for (auto neighbor: allNeighbors) {
-            // Push to distinct neighbors if it is not in the list
-            if (std::find(distinctNeighbors.begin(), distinctNeighbors.end(), neighbor) == distinctNeighbors.end()) {
-                distinctNeighbors.push_back(neighbor);
-            }
-        }
-
-        m_neighborhood[vertexId] = distinctNeighbors;
-    }
+Mesh::~Mesh() {
+    delete m_arap;
 }
 
-Eigen::Vector2f Mesh::getMousePosition() const {
-    return Eigen::Vector2f { m_viewer.current_mouse_x, m_viewer.core().viewport(3) - (float) m_viewer.current_mouse_y };
+Eigen::Vector2f Mesh::getMousePosition(igl::opengl::glfw::Viewer& viewer) {
+    return Eigen::Vector2f { viewer.current_mouse_x, viewer.core().viewport(3) - (float) viewer.current_mouse_y };
 }
 
 int Mesh::findClosestVertexToSelection(const int faceId, const Eigen::Vector3f& barycentricPosition) {
@@ -64,7 +31,7 @@ int Mesh::findClosestVertexToSelection(const int faceId, const Eigen::Vector3f& 
 bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool toggleable = true) {
     int faceId;
 
-    Eigen::Vector2f mousePosition = getMousePosition();
+    Eigen::Vector2f mousePosition = getMousePosition(viewer);
     Eigen::Vector3f barycentricPosition; // P = wA + uB + vC
 
     if (m_arapInProgress) { // ARAP
@@ -73,6 +40,10 @@ bool Mesh::handleSelection(igl::opengl::glfw::Viewer& viewer, const bool togglea
                                          m_vertices, m_faces, faceId, barycentricPosition)) {
                 // Find the closest vertex to selection
                 m_movingVertex = findClosestVertexToSelection(faceId, barycentricPosition);
+
+                // Instantiate ARAP
+                m_arap = new Arap(m_vertices, m_faces);
+
                 return true;
             }
         }
@@ -116,7 +87,7 @@ void Mesh::handleMouseReleaseEvent() {
 }
 
 Eigen::Vector3f Mesh::convertCameraToWorldPosition(igl::opengl::glfw::Viewer& viewer, int vertexId) const {
-    Eigen::Vector2f mousePosition = getMousePosition();
+    Eigen::Vector2f mousePosition = getMousePosition(viewer);
     Eigen::Vector3f vertexPosition = {
         (float) m_vertices.row(vertexId).x(), (float) m_vertices.row(vertexId).y(), (float) m_vertices.row(vertexId).z()
     };
@@ -130,18 +101,19 @@ Eigen::Vector3f Mesh::convertCameraToWorldPosition(igl::opengl::glfw::Viewer& vi
 
 void Mesh::computeDeformation(igl::opengl::glfw::Viewer& viewer) {
     // Extract selected faces to a list
-    std::vector<int> selectedFaceIds;
+    std::vector<int> selectedFaces;
     for (auto entry : m_anchorSelections) {
         if (entry.second) { // If face is selected
-            selectedFaceIds.push_back(entry.first);
+            selectedFaces.push_back(entry.first);
         }
     }
 
     // Compute the updated position of moving vertex
-    m_arap.updateMovingVertex(m_movingVertex, convertCameraToWorldPosition(viewer, m_movingVertex));
+    m_arap->updateMovingVertex(m_movingVertex, convertCameraToWorldPosition(viewer, m_movingVertex),
+                              m_faces, selectedFaces);
 
     // Compute deformation
-    Eigen::MatrixXd deformedVertices = m_arap.computeDeformation(m_vertices, m_faces, m_neighborhood, selectedFaceIds);
+    Eigen::MatrixXd deformedVertices = m_arap->computeDeformation(m_vertices);
     m_vertices = safeReplicate(deformedVertices);
 
     viewer.data().compute_normals();
@@ -153,7 +125,7 @@ void Mesh::handleMouseMoveEvent() {
         if (m_selectionHandledOnMesh) {
             handleSelection(viewer,  false); // Selecting anchor points
 
-            if (m_arapInProgress) { // ARAP
+            if (m_arap != nullptr && m_arapInProgress) { // Deformation
                 computeDeformation(viewer);
             }
 
@@ -191,7 +163,7 @@ void Mesh::handleKeyDownEvent() {
 
             // Remove all the paints
             m_colors = Eigen::MatrixXd::Constant(m_faces.rows(), 3, 1);
-            m_viewer.data().set_colors(m_colors);
+            viewer.data().set_colors(m_colors);
 
             return true;
         }
@@ -211,6 +183,9 @@ void Mesh::launchViewer() {
     // Plot the mesh
     m_viewer.data().set_mesh(m_vertices, m_faces);
     m_viewer.data().set_colors(m_colors);
+
+    // Disable wireframe
+    m_viewer.data().show_lines = false;
 
     // Launch the glfw viewer
     m_viewer.launch();

@@ -22,7 +22,7 @@
 class Mesh {
 public:
     explicit Mesh(const std::string&);
-    ~Mesh() = default;
+    ~Mesh();
 
     // Launches the GLFW viewer
     void launchViewer();
@@ -35,11 +35,7 @@ private:
     igl::opengl::glfw::Viewer m_viewer{};
 
     // ARAP instance
-    Arap m_arap;
-
-    // Neighborhood of vertices (Mapping between vertex id and its neighbor ids)
-    std::map<int, std::vector<int>> m_neighborhood;
-    void populateNeighborhood(); // Populates the neighborhood
+    Arap* m_arap = nullptr;
 
     // Selections stored
     int m_movingVertex = INVALID_VERTEX; // Selected moving vertex to be used to perform ARAP
@@ -50,7 +46,7 @@ private:
     bool m_arapInProgress = false; // If ARAP is running
 
     // Returns the mouse position
-    Eigen::Vector2f getMousePosition() const;
+    static Eigen::Vector2f getMousePosition(igl::opengl::glfw::Viewer&);
 
     // Finds the closest vertex index to a selected face
     int findClosestVertexToSelection(int, const Eigen::Vector3f&);

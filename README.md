@@ -4,7 +4,7 @@
 
 ### Results
 
-**// TODO: Gif here**
+![armadillo_deformation](./doc/img/armadillo_deformation.gif)
 
 _You can find more pictures of the results [here](https://github.com/erdenbatuhan/interactive-arap/blob/master/doc/img)_!
 

@@ -14,7 +14,7 @@ You can easily download and run the project without installing a lot of librarie
 
 - You need to have **OpenGL** installed on your system to build and run the project.
 
-- The library, **[libigl](https://libigl.github.io/tutorial/)**, will be installed by itself (*@see* the corresponding cmake module: **./cmake/libigl**).
+- The library, **[libigl](https://libigl.github.io/tutorial/)**, will be installed by itself (*@see* the corresponding [**cmake module**](https://github.com/erdenbatuhan/interactive-arap/blob/master/cmake/libigl/libigl.cmake)).
 
 - *(Optional)* If you have **OpenMP** installed on your system, the project will run in parallel.
 

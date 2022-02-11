@@ -252,7 +252,7 @@ double Arap::computeRigidityEnergy(Eigen::MatrixXd& deformedVertices, std::vecto
 
         for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
             Eigen::Vector3d deformedPositionsDiff = deformedVertices.row(i) - deformedVertices.row(neighbor);
-            Eigen::Vector3d undeformedPositionsDiff  = m_undeformedVertices.row(i) - m_undeformedVertices.row(neighbor);
+            Eigen::Vector3d undeformedPositionsDiff = m_undeformedVertices.row(i) - m_undeformedVertices.row(neighbor);
 
             rigidityEnergyPerCell += m_weightMatrix(i, neighbor) * (deformedPositionsDiff - rotationMatrices[i] * undeformedPositionsDiff).squaredNorm();
         }

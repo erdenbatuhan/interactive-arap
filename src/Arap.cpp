@@ -55,7 +55,7 @@ void Arap::populateNeighborhood(Eigen::MatrixXi& faces) {
 }
 
 void Arap::initializeWeightMatrix(Eigen::MatrixXi& faces) {
-#if not USE_COTANGENT_WEIGHTS // Constant weights
+#if not COTANGENT_WEIGHTING // Constant weights
     m_weightMatrix = Eigen::MatrixXd::Ones(m_undeformedVertices.rows(), m_undeformedVertices.rows());
 #else // Cotangent weights
     m_weightMatrix = Eigen::MatrixXd::Zero(m_undeformedVertices.rows(), m_undeformedVertices.rows());

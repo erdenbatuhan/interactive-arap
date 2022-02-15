@@ -8,6 +8,9 @@ cmake_minimum_required(VERSION 3.13)
 
 project(interactive_arap)
 
+# Always run in release mode
+set(CMAKE_BUILD_TYPE Release)
+
 # Set the library directory for additional libraries
 set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs CACHE PATH "Path to the library folder containing additional libraries")
 

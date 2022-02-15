@@ -6,214 +6,208 @@
 
 #include "../include/Arap-Ceres.h"
 
-struct ARAPEnergy
+// Fitting term
+struct FitEnergy
 {
-    ARAPEnergy(
-        int numNeighbors
-    ) :
-      _numNeighbors(numNeighbors)
-    {
-    }
+	FitEnergy(
+		const Eigen::Vector3d& constraint,
+		double weight
+	) :
+		_constraint(constraint),
+		_weight(weight)
+	{
+	}
 
-    //------------------------------------------------
-    // parameters:
-    // pi = old cell point
-    // pi_prime = new cell point
-    // Ri = cell rotation
-    // Multiple, for each neighbor:
-    // wij = uniform / cotan weight
-    // pj = old neighbor point
-    // pj_prime = new neighbor point
-    //------------------------------------------------
-    template <typename T>
-    bool operator()(
-      T const *const *parameters,
-      T *residuals
-    ) const
-    {
-        residuals[0] = T(0.0);
+	template <typename T>
+	bool operator()(
+		const T* const position,
+		T* residuals
+		) const
+	{
+		residuals[0] = (position[0] - T(_constraint[0])) * T(_weight);
+		residuals[1] = (position[1] - T(_constraint[1])) * T(_weight);
+		residuals[2] = (position[2] - T(_constraint[2])) * T(_weight);
+		return true;
+	}
 
-        const T *pi = parameters[0];
-        const T *pi_prime = parameters[1];
-        const T *rotation = parameters[2];
+	static ceres::CostFunction* Create(
+		const Eigen::Vector3d& constraint,
+		double weight
+	)
+	{
+		return new ceres::AutoDiffCostFunction<FitEnergy, 3, 3>(
+			new FitEnergy(constraint, weight));
+	}
 
-        T quat[4];
-        ceres::RotationMatrixToQuaternion(rotation, quat);
+	Eigen::Vector3d _constraint;
+	double _weight;
+};
 
-        // Calculate for each neighbor
-        for (int i = 0; i < _numNeighbors; i++)
-        {
-            const T &weight = parameters[3 + (i * 3)][0];
-            const T *pj = parameters[4 + (i * 3)];
-            const T *pj_prime = parameters[5 + (i * 3)];
+// Regularization term
+struct RegEnergy
+{
+	RegEnergy(
+		const Eigen::Vector3d& edge,
+		double weight
+	) :
+		_edge(edge),
+		_weight(weight)
+	{
+	}
 
-            // Compute edge vectors
-            const T eij[3] = {pi[0] - pj[0], pi[1] - pj[1], pi[2] - pj[2]};
-            const T eij_prime[3] = {pi_prime[0] - pj_prime[0], pi_prime[1] - pj_prime[1], pi_prime[2] - pj_prime[2]};
+	template <typename T>
+	bool operator()(
+		const T* const pi,
+		const T* const pj,
+		const T* const rot,
+		T* residuals
+		) const
+	{
 
-            // Rotate old edge
-            T eij_rot[3];
-            ceres::QuaternionRotatePoint(quat, eij, eij_rot);
+		const T edge[3] =
+		{
+			T(_edge.x()),
+			T(_edge.y()),
+			T(_edge.z())
+		};
 
-            // Subtract new - rotated
-            residuals[0] += weight * (eij_prime[0] - eij_rot[0]);
-            residuals[1] += weight * (eij_prime[1] - eij_rot[1]);
-            residuals[2] += weight * (eij_prime[2] - eij_rot[2]);
-        }
+		T edge_r[3] =
+		{
+			T(0),
+			T(0),
+			T(0)
+		};
 
-        return true;
-    }
+		ceres::AngleAxisRotatePoint(rot, edge, edge_r);
 
-    static ceres::CostFunction *Create(
-      int numNeighbors
-    )
-    {
-        // TODO: Potentially play with stride for better performance
-        auto energy = new ceres::DynamicAutoDiffCostFunction<ARAPEnergy, 4>(new ARAPEnergy(numNeighbors));
+		const T edge_p[3] =
+		{
+			pi[0] - pj[0],
+			pi[1] - pj[1],
+			pi[2] - pj[2]
+		};
 
-        // Old cell point
-        energy->AddParameterBlock(3);
-        // New cell point
-        energy->AddParameterBlock(3);
-        // Cell rotation
-        energy->AddParameterBlock(9);
+		residuals[0] = T(_weight) * (edge_p[0] - edge_r[0]);
+		residuals[1] = T(_weight) * (edge_p[1] - edge_r[1]);
+		residuals[2] = T(_weight) * (edge_p[2] - edge_r[2]);
 
-        // For each neighbor point
-        for (int i = 0; i < numNeighbors; ++i)
-        {
-            // Uniform / cotan weight
-            energy->AddParameterBlock(1);
-            // Old neighbor point
-            energy->AddParameterBlock(3);
-            // New neighbor point
-            energy->AddParameterBlock(3);
-        }
+		return true;
+	}
 
-        // Only one output: cell energy
-        energy->SetNumResiduals(3);
+	static ceres::CostFunction* Create(
+		const Eigen::Vector3d& edge,
+		double weight
+	)
+	{
+		return new ceres::AutoDiffCostFunction<RegEnergy, 3, 3, 3, 3>(
+			new RegEnergy(edge, weight));
+	}
 
-        return energy;
-    }
-
-    int _numNeighbors;
+	Eigen::Vector3d _edge;
+	double _weight;
 };
 
 void ArapCeres::updateMovingVertex(
-  const int movingVertex,
-  const Eigen::Vector3f &movingVertexPosition
+	const int movingVertex,
+	const Eigen::Vector3f& movingVertexPosition
 )
 {
-    m_movingVertex = movingVertex;
-    m_movingVertexPosition = movingVertexPosition.cast<double>();
+	m_movingVertex = movingVertex;
+	m_movingVertexPosition = movingVertexPosition.cast<double>();
 }
 
 std::vector<int> ArapCeres::collectFixedVertices(
-  Eigen::MatrixXi &faces,
-  const std::vector<int> &anchorFaces
+	Eigen::MatrixXi& faces,
+	const std::vector<int>& anchorFaces
 ) const
 {
-    std::vector<int> fixedVertices;
+	std::vector<int> fixedVertices;
 
-    // Add the vertices of each face to the fixed vertices
-    for (int anchorFace : anchorFaces)
-    {
-        Eigen::VectorXi faceVertices = faces.row(anchorFace);
+	// Add the vertices of each face to the fixed vertices
+	for (int anchorFace : anchorFaces)
+	{
+		Eigen::VectorXi faceVertices = faces.row(anchorFace);
 
-        for (int j = 0; j < faces.cols(); j++)
-        {
-            fixedVertices.push_back(faceVertices(j));
-        }
-    }
+		for (int j = 0; j < faces.cols(); j++)
+		{
+			fixedVertices.push_back(faceVertices(j));
+		}
+	}
 
-    // Add the selected vertex to the fixed vertices
-    fixedVertices.push_back(m_movingVertex);
+	// Add the selected vertex to the fixed vertices
+	fixedVertices.push_back(m_movingVertex);
 
-    return fixedVertices;
+	return fixedVertices;
 }
 
 Eigen::MatrixXd ArapCeres::computeDeformation(
-  Eigen::MatrixXd &vertices,
-  Eigen::MatrixXi &faces,
-  std::map<int, std::vector<int>> &neighborhood,
-  const std::vector<int> &anchorFaceIds
+	Eigen::MatrixXd& vertices,
+	Eigen::MatrixXi& faces,
+	std::map<int, std::vector<int>>& neighborhood,
+	const std::vector<int>& anchorFaceIds
 )
 {
-    ceres::Problem problem;
+	ceres::Problem problem;
 
-    Eigen::MatrixXd_R verts = convert(vertices);
-    Eigen::MatrixXd_R dVerts = safeReplicate(verts);
-    dVerts.block<1,3>(m_movingVertex, 0) = m_movingVertexPosition;
-    std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds);
+	std::vector<int> fixedVertices = collectFixedVertices(faces, anchorFaceIds);
 
-    // Initialize weights
-    int totalWeights = 0;
-    std::vector<double> weights;
-    for(int i = 0; i < neighborhood.size(); ++i)
-    {
-      totalWeights += neighborhood[i].size();
-    }
-    weights.reserve(totalWeights);
+	// Original mesh
+	Eigen::MatrixXd_R verts = convert(vertices);
+	// Deformed mesh
+	Eigen::MatrixXd_R dVerts = safeReplicate(verts);
+	// Constraints
+	Eigen::MatrixXd_R cVerts = Eigen::MatrixXd_R::Zero(fixedVertices.size(), 3);
+	// Rotations
+	Eigen::MatrixXd_R rotations = Eigen::MatrixXd_R::Zero(verts.rows(), 3);
 
-    // Guess initial rotations & store them
-    std::vector<Eigen::Matrix3d> matrices(verts.rows());
+	// Initialize weights
+	int totalWeights = 0;
+	std::vector<double> weights;
+	for (int i = 0; i < neighborhood.size(); ++i)
+	{
+		totalWeights += neighborhood[i].size();
+	}
+	weights.reserve(totalWeights);
 
-    // Create vector of blocks for solver
-    std::vector<std::vector<double *>> blocks(verts.rows());
+	// Add fixed vertices
+	for(size_t i = 0; i < fixedVertices.size(); ++i)
+	{
+		auto idx = fixedVertices[i];
+		cVerts.row(i) = verts.row(idx);
 
-    // Create blocks & energy terms
-    for (Eigen::Index i = 0; i < verts.rows(); ++i)
-    {
-        std::vector<double*>& block = blocks[i];
+		ceres::CostFunction* fit = FitEnergy::Create(cVerts.row(i), 2.0);
+		problem.AddResidualBlock(fit, NULL, dVerts.row(idx).data());
+	}
 
-        block.push_back(verts.row(i).data());
-        block.push_back(dVerts.row(i).data());
+	// Add moving vertex
+	ceres::CostFunction* fitMoving = FitEnergy::Create(m_movingVertexPosition, 2.0);
+	problem.AddResidualBlock(fitMoving, NULL, dVerts.row(m_movingVertex).data());
 
-        // Add rotation
-        matrices[i] = Eigen::Matrix3d();
-        matrices[i].setIdentity();
-        block.push_back(matrices[i].data());
+	// Add cells
+	for (size_t i = 0; i < neighborhood.size(); ++i)
+	{
+		for (size_t j = 0; j < neighborhood[i].size(); ++j)
+		{
+			auto neighbor = neighborhood[i][j];
+			Eigen::Vector3d eij = verts.row(i) - verts.row(neighbor);
+			ceres::CostFunction* reg = RegEnergy::Create(eij, 1.0);
+			problem.AddResidualBlock(reg, NULL, dVerts.row(i).data(), dVerts.row(neighbor).data(), rotations.row(i).data());
+		}
+	}
 
-        // Add weights & neighbors
-        auto neighbors = neighborhood[i];
-        for (int j = 0; j < neighbors.size(); ++j)
-        {
-            // TODO: Currently uniform, replace with cotan weight
-            weights.push_back(1.0);
-            block.push_back(&weights.back());
-            block.push_back(&verts(neighbors[j], 0));
-            block.push_back(&dVerts(neighbors[j], 0));
-        }
+	ceres::Solver::Options options;
+#if DEBUG
+	options.minimizer_progress_to_stdout = true;
+#endif
+	options.linear_solver_type = ceres::LinearSolverType::CGNR;
+	options.max_num_iterations = 10000;
+	options.function_tolerance = 0.05;
+	options.gradient_tolerance = 1e-4 * options.function_tolerance;
+	options.num_threads = 4;
 
-        // Create dynamic energy function
-        ceres::CostFunction *energy = ARAPEnergy::Create(neighbors.size());
+	ceres::Solver::Summary summary;
+	ceres::Solve(options, &problem, &summary);
+	std::cout << summary.FullReport() << "\n";
 
-        // Add block
-        auto bl = problem.AddResidualBlock(energy, NULL, blocks[i]);
-    }
-
-    // Fix all vertices of undeformed mesh
-    for (int i = 0; i < verts.rows(); ++i)
-    {
-        problem.SetParameterBlockConstant(verts.row(i).data());
-    }
-
-    // Fix anchor vertices in deformed mesh
-    for (int i = 0; i < fixedVertices.size(); ++i)
-    {
-        problem.SetParameterBlockConstant(dVerts.row(i).data());
-    }
-
-    ceres::Solver::Options options;
-    options.minimizer_progress_to_stdout = true;
-    // TODO: Play with these for best perfomance / quality
-    options.linear_solver_type = ceres::SPARSE_SCHUR;
-    options.max_num_iterations = 10;
-    options.parameter_tolerance = 1e-4;
-    options.num_threads = 8;
-
-    ceres::Solver::Summary summary;
-    ceres::Solve(options, &problem, &summary);
-    std::cout << summary.FullReport() << "\n";
-
-    return dVerts;
+	return dVerts;
 }

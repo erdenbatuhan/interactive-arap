@@ -24,11 +24,14 @@ Arap::Arap() {
 void Arap::populateNeighborhood(Eigen::MatrixXi& faces) {
     m_neighborhood.clear();
 
+    auto& undeformedVertices = m_undeformedVertices;
+    auto& neighborhood = m_neighborhood;
+
 #ifdef OMP
     #pragma omp parallel for default(none) \
-            shared(m_undeformedVertices, m_neighborhood, faces)
+            shared(undeformedVertices, neighborhood, faces)
 #endif
-    for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the vertices
+    for (int i = 0; i < undeformedVertices.rows(); i++) { // Iterate over the vertices
         std::vector<int> allNeighbors;
         std::vector<int> distinctNeighbors;
 
@@ -50,7 +53,7 @@ void Arap::populateNeighborhood(Eigen::MatrixXi& faces) {
         }
 
         #pragma omp critical
-        m_neighborhood[i] = distinctNeighbors;
+        neighborhood[i] = distinctNeighbors;
     }
 }
 
@@ -59,13 +62,17 @@ void Arap::initializeWeightMatrix(Eigen::MatrixXi& faces) {
     m_weightMatrix = Eigen::MatrixXd::Ones(m_undeformedVertices.rows(), m_undeformedVertices.rows());
 #else // Cotangent weights
     m_weightMatrix = Eigen::MatrixXd::Zero(m_undeformedVertices.rows(), m_undeformedVertices.rows());
-    std::vector<Eigen::Vector2i> vertexEdges[m_undeformedVertices.rows()];
+    std::vector<std::vector<Eigen::Vector2i>> vertexEdges(m_undeformedVertices.rows());
+
+    auto& undeformedVertices = m_undeformedVertices;
+    auto& neighborhood = m_neighborhood;
+    auto& weightMatrix = m_weightMatrix;
 
 #ifdef OMP
     #pragma omp parallel for default(none) \
-            shared(m_undeformedVertices, faces, vertexEdges)
+            shared(undeformedVertices, faces, vertexEdges)
 #endif
-    for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the vertices
+    for (int i = 0; i < undeformedVertices.rows(); i++) { // Iterate over the vertices
         std::vector<Eigen::Vector2i> edges;
 
         for (int j = 0; j < faces.rows(); j++) { // Iterate over the faces
@@ -83,16 +90,16 @@ void Arap::initializeWeightMatrix(Eigen::MatrixXi& faces) {
 
 #ifdef OMP
     #pragma omp parallel for default(none) \
-            shared(m_undeformedVertices, m_neighborhood, m_weightMatrix, vertexEdges)
+            shared(undeformedVertices, neighborhood, weightMatrix, vertexEdges)
 #endif
-    for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the vertices
-        for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
+    for (int i = 0; i < undeformedVertices.rows(); i++) { // Iterate over the vertices
+        for (int neighbor : neighborhood[i]) { // Iterate over the neighbors
             double totalAngle = 0.0;
 
             for (const Eigen::Vector2i& edge : vertexEdges[i]) { // Iterate over the edges
-                double norm_bc = (m_undeformedVertices.row(edge[0]) - m_undeformedVertices.row(edge[1])).norm(); // Norm between B and C
-                double norm_ac = (m_undeformedVertices.row(i) - m_undeformedVertices.row(edge[1])).norm(); // Norm between A and C
-                double norm_ab = (m_undeformedVertices.row(i) - m_undeformedVertices.row(edge[0])).norm(); // Norm between A and B
+                double norm_bc = (undeformedVertices.row(edge[0]) - undeformedVertices.row(edge[1])).norm(); // Norm between B and C
+                double norm_ac = (undeformedVertices.row(i) - undeformedVertices.row(edge[1])).norm(); // Norm between A and C
+                double norm_ab = (undeformedVertices.row(i) - undeformedVertices.row(edge[0])).norm(); // Norm between A and B
 
                 // From cosine law
                 double beta = acos(((norm_ab * norm_ab) + (norm_bc * norm_bc) - (norm_ac * norm_ac)) / (2 * norm_ab * norm_bc));
@@ -102,10 +109,10 @@ void Arap::initializeWeightMatrix(Eigen::MatrixXi& faces) {
                 totalAngle += (edge[1] == neighbor) * abs(tan(M_PI_2 - beta));
             }
 
-            m_weightMatrix(i, neighbor) = abs(totalAngle) / 2;
+            weightMatrix(i, neighbor) = abs(totalAngle) / 2;
         }
 
-        m_weightMatrix(i, i) = 1.0; // Override the diagonal entry
+        weightMatrix(i, i) = 1.0; // Override the diagonal entry
     }
 #endif
 }
@@ -113,14 +120,19 @@ void Arap::initializeWeightMatrix(Eigen::MatrixXi& faces) {
 void Arap::computeSystemMatrix() {
     m_systemMatrix = Eigen::MatrixXd::Zero(m_undeformedVertices.rows(), m_undeformedVertices.rows());
 
+    auto& undeformedVertices = m_undeformedVertices;
+    auto& neighborhood = m_neighborhood;
+    auto& weightMatrix = m_weightMatrix;
+    auto& systemMatrix = m_systemMatrix;
+
 #ifdef OMP
     #pragma omp parallel for default(none) \
-            shared(m_undeformedVertices, m_neighborhood, m_weightMatrix, m_systemMatrix)
+            shared(undeformedVertices, neighborhood, weightMatrix, systemMatrix)
 #endif
-    for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the vertices
-        for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
-            m_systemMatrix(i, i) += m_weightMatrix(i, neighbor);
-            m_systemMatrix(i, neighbor) -= m_weightMatrix(i, neighbor);
+    for (int i = 0; i < undeformedVertices.rows(); i++) { // Iterate over the vertices
+        for (int neighbor : neighborhood[i]) { // Iterate over the neighbors
+            systemMatrix(i, i) += weightMatrix(i, neighbor);
+            systemMatrix(i, neighbor) -= weightMatrix(i, neighbor);
         }
     }
 }
@@ -169,16 +181,18 @@ void Arap::updateMovingVertex(const int movingVertex, const Eigen::Vector3f& mov
 }
 
 std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVertices) {
-    std::vector<Eigen::Matrix3d> rotationMatrices;
-    rotationMatrices.reserve(m_undeformedVertices.rows());
+    std::vector<Eigen::Matrix3d> rotationMatrices(m_undeformedVertices.rows());
+
+    auto& undeformedVertices = m_undeformedVertices;
+    auto& neighborhood = m_neighborhood;
+    auto& weightMatrix = m_weightMatrix;
 
 #ifdef OMP
     #pragma omp parallel for default(none) \
-            shared(m_undeformedVertices, m_neighborhood, m_weightMatrix, deformedVertices) \
-            reduction(merge: rotationMatrices)
+            shared(undeformedVertices, neighborhood, weightMatrix, deformedVertices, rotationMatrices)
 #endif
-    for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the vertices
-        const long numNeighbors = (long) (m_neighborhood[i].size());
+    for (int i = 0; i < undeformedVertices.rows(); i++) { // Iterate over the vertices
+        const long numNeighbors = (long) (neighborhood[i].size());
 
         // The definitions for the matrices P, D and P_prime can be found in the paper!
         Eigen::MatrixXd P = Eigen::MatrixXd::Zero(3, numNeighbors);
@@ -186,9 +200,9 @@ std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVe
         Eigen::MatrixXd P_prime = Eigen::MatrixXd::Zero(3, numNeighbors);
 
         for (int j = 0; j < numNeighbors; j++) { // Iterate over the neighbors
-            P.col(j) = m_undeformedVertices.row(i) - m_undeformedVertices.row(m_neighborhood[i][j]);
-            D(j, j) = m_weightMatrix(i, m_neighborhood[i][j]);
-            P_prime.col(j) = deformedVertices.row(i) - deformedVertices.row(m_neighborhood[i][j]);
+            P.col(j) = undeformedVertices.row(i) - undeformedVertices.row(neighborhood[i][j]);
+            D(j, j) = weightMatrix(i, neighborhood[i][j]);
+            P_prime.col(j) = deformedVertices.row(i) - deformedVertices.row(neighborhood[i][j]);
         }
 
         // S, the covariance matrix
@@ -205,7 +219,7 @@ std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVe
 
         // Add the rotation matrix R to the list
         Eigen::Matrix3d R = U * I * V.transpose();
-        rotationMatrices.push_back(R);
+        rotationMatrices[i] = R;
     }
 
     return rotationMatrices;
@@ -214,21 +228,26 @@ std::vector<Eigen::Matrix3d> Arap::estimateRotations(Eigen::MatrixXd& deformedVe
 Eigen::MatrixXd Arap::computeRHS(std::vector<Eigen::Matrix3d> rotationMatrices) {
     Eigen::MatrixXd rhs = Eigen::MatrixXd::Zero(m_undeformedVertices.rows(), 3);
 
+    auto& undeformedVertices = m_undeformedVertices;
+    auto& neighborhood = m_neighborhood;
+    auto& weightMatrix = m_weightMatrix;
+    auto& fixedVertices = m_fixedVertices;
+
 #ifdef OMP
     #pragma omp parallel for default(none) \
-            shared(m_undeformedVertices, m_neighborhood, m_weightMatrix, m_fixedVertices, rotationMatrices, rhs)
+            shared(undeformedVertices, neighborhood, weightMatrix, fixedVertices, rotationMatrices, rhs)
 #endif
-    for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the vertices
+    for (int i = 0; i < undeformedVertices.rows(); i++) { // Iterate over the vertices
         Eigen::Vector3d rhsRow = Eigen::Vector3d(0.0, 0.0, 0.0);
 
         if (i == m_movingVertex) { // If the vertex is the moving one, get the new position
             rhsRow = m_movingVertexPosition;
-        } else if (std::find(m_fixedVertices.begin(), m_fixedVertices.end(), i) != m_fixedVertices.end()) { // Current vertex is a fixed vertex
-            rhsRow = m_undeformedVertices.row(i);
+        } else if (std::find(fixedVertices.begin(), fixedVertices.end(), i) != fixedVertices.end()) { // Current vertex is a fixed vertex
+            rhsRow = undeformedVertices.row(i);
         } else { // Current vertex is not a fixed vertex but a to-be-deformed vertex
-            for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
-                rhsRow += 0.5 * m_weightMatrix(i, neighbor) *
-                          (m_undeformedVertices.row(i) - m_undeformedVertices.row(neighbor)) *
+            for (int neighbor : neighborhood[i]) { // Iterate over the neighbors
+                rhsRow += 0.5 * weightMatrix(i, neighbor) *
+                          (undeformedVertices.row(i) - undeformedVertices.row(neighbor)) *
                           (rotationMatrices[i] + rotationMatrices[neighbor]);
             }
         }
@@ -242,22 +261,26 @@ Eigen::MatrixXd Arap::computeRHS(std::vector<Eigen::Matrix3d> rotationMatrices) 
 double Arap::computeRigidityEnergy(Eigen::MatrixXd& deformedVertices, std::vector<Eigen::Matrix3d> rotationMatrices) {
     double rigidityEnergy = 0.0; // rigidity energy
 
+    auto& undeformedVertices = m_undeformedVertices;
+    auto& neighborhood = m_neighborhood;
+    auto& weightMatrix = m_weightMatrix;
+
 #ifdef OMP
     #pragma omp parallel for default(none) \
-            shared(m_undeformedVertices, m_neighborhood, m_weightMatrix, deformedVertices, rotationMatrices) \
+            shared(undeformedVertices, neighborhood, weightMatrix, deformedVertices, rotationMatrices) \
             reduction(+: rigidityEnergy)
 #endif
-    for (int i = 0; i < m_undeformedVertices.rows(); i++) { // Iterate over the undeformed vertices
+    for (int i = 0; i < undeformedVertices.rows(); i++) { // Iterate over the undeformed vertices
         double rigidityEnergyPerCell = 0.0; // energy per cell
 
-        for (int neighbor : m_neighborhood[i]) { // Iterate over the neighbors
+        for (int neighbor : neighborhood[i]) { // Iterate over the neighbors
             Eigen::Vector3d deformedPositionsDiff = deformedVertices.row(i) - deformedVertices.row(neighbor);
-            Eigen::Vector3d undeformedPositionsDiff = m_undeformedVertices.row(i) - m_undeformedVertices.row(neighbor);
+            Eigen::Vector3d undeformedPositionsDiff = undeformedVertices.row(i) - undeformedVertices.row(neighbor);
 
-            rigidityEnergyPerCell += m_weightMatrix(i, neighbor) * (deformedPositionsDiff - rotationMatrices[i] * undeformedPositionsDiff).squaredNorm();
+            rigidityEnergyPerCell += weightMatrix(i, neighbor) * (deformedPositionsDiff - rotationMatrices[i] * undeformedPositionsDiff).squaredNorm();
         }
 
-        rigidityEnergy += m_weightMatrix(i, i) * rigidityEnergyPerCell;
+        rigidityEnergy += weightMatrix(i, i) * rigidityEnergyPerCell;
     }
 
     return rigidityEnergy;

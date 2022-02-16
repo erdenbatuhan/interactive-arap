@@ -18,9 +18,6 @@
 
 #ifdef OMP
 #include <omp.h>
-
-// User-defined reductions (reference: http://www.archer.ac.uk/training/course-material/2018/07/AdvOpenMP-camb/L09-OpenMP4.pdf)
-#pragma omp declare reduction(merge: std::vector<Eigen::Matrix3d>: omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
 #endif
 
 #define COTANGENT_WEIGHTING 0 // Otherwise, constant weights will be applied
